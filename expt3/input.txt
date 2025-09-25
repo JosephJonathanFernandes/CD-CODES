@@ -1,0 +1,2 @@
+Lex is powerful. Lex makes lexical analyzers.
+Lex helps in compiler design, and lex is useful.
