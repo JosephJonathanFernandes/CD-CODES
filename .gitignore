@@ -1,0 +1,51 @@
+# Ignore compiled binaries and object files
+*.exe
+*.out
+*.o
+*.obj
+*.dll
+*.lib
+*.a
+*.so
+*.dylib
+
+# Ignore lex/flex and yacc/bison generated files
+lex.yy.c
+y.tab.c
+y.tab.h
+*.tab.c
+*.tab.h
+*.output
+
+# Ignore common build directories
+/build/
+/bin/
+/obj/
+/dist/
+
+# Ignore editor and OS files
+*.log
+*.tmp
+*~
+*.swp
+*.swo
+*.bak
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# VS Code and Visual Studio
+.vscode/
+.vs/
+*.suo
+*.user
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+
+# Misc
+*.class
+
+# Keep project files (e.g. .l, .c, .h, .md, .docx) under version control
+# (no patterns below this line)
