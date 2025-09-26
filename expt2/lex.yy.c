@@ -998,7 +998,7 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 #line 11 "expt2a.l"
-{ printf("<IDENTIFIER, %s>\n", yytext); }
+{ printf("<IDENTIFIER, %s >\n", yytext); }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
