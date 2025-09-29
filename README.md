@@ -1,17 +1,4 @@
-# Compiler Design Laboratory -├── expt3/                            # Experiment 3: Text Analysis
-│   ├── README.md
-│   ├── expt3a.l                      # Word frequency analyzer
-│   ├── input.txt                     # Sample input file
-│   ├── lex.exe
-│   └── lex.yy.c
-├── expt4/                            # Experiment 4: FIRST and FOLLOW Sets
-│   ├── README.md
-│   ├── expt4a.py                     # FIRST and FOLLOW calculator
-│   └── grammar.txt                   # Sample grammar file
-└── expt5/                            # Experiment 5: Left-Recursion Elimination
-    ├── README.md
-    ├── expt5a.py                     # Left-recursion elimination tool
-    └── grammar.txt                   # Sample left-recursive grammarrograms
+# Compiler Design Laboratory - LEX Programs
 
 This repository contains a collection of LEX (Lexical Analyzer Generator) programs developed for compiler design laboratory sessions. LEX is a tool for generating lexical analyzers, which are used in the first phase of compilation to break down source code into tokens.
 
