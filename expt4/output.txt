@@ -1,15 +1,521 @@
+PS C:\Users\Joseph\Desktop\compiler design\expt5> cd ..
+PS C:\Users\Joseph\Desktop\compiler design> cd expt4
 PS C:\Users\Joseph\Desktop\compiler design\expt4> python expt4a.py
+==================================================
+COMPUTING FIRST SETS
+==================================================
+
+--- Computing FIRST(E) ---
+Computing FIRST(E)
+E is non-terminal with productions: [['T', 'X']]
+  Production 1: E -> T X
+    Processing symbols in production...
+    Processing symbol 1: T
+    Computing FIRST(T)
+    T is non-terminal with productions: [['F', 'Y']]
+      Production 1: T -> F Y
+        Processing symbols in production...
+        Processing symbol 1: F
+        Computing FIRST(F)
+        F is non-terminal with productions: [['(', 'E', ')'], ['id']]
+          Production 1: F -> ( E )
+            Processing symbols in production...
+            Processing symbol 1: (
+            Computing FIRST(()
+            ( is terminal, so FIRST(() = {(}
+            Final FIRST(() = {'('}
+            Adding FIRST(() - {ε} = {'('} to FIRST(F)
+            Current FIRST(F) = {'('}
+            ( doesn't have ε, stopping here for this production
+          Production 2: F -> id
+            Processing symbols in production...
+            Processing symbol 1: id
+            Computing FIRST(id)
+            id is terminal, so FIRST(id) = {id}
+            Final FIRST(id) = {'id'}
+            Adding FIRST(id) - {ε} = {'id'} to FIRST(F)
+            Current FIRST(F) = {'(', 'id'}
+            id doesn't have ε, stopping here for this production
+        Final FIRST(F) = {'(', 'id'}
+        Adding FIRST(F) - {ε} = {'(', 'id'} to FIRST(T)
+        Current FIRST(T) = {'(', 'id'}
+        F doesn't have ε, stopping here for this production
+    Final FIRST(T) = {'(', 'id'}
+    Adding FIRST(T) - {ε} = {'(', 'id'} to FIRST(E)
+    Current FIRST(E) = {'(', 'id'}
+    T doesn't have ε, stopping here for this production
+Final FIRST(E) = {'(', 'id'}
+--- FIRST(E) = {'(', 'id'} ---
+
+
+--- Computing FIRST(X) ---
+Computing FIRST(X)
+X is non-terminal with productions: [['+', 'T', 'X'], ['ε']]
+  Production 1: X -> + T X
+    Processing symbols in production...
+    Processing symbol 1: +
+    Computing FIRST(+)
+    + is terminal, so FIRST(+) = {+}
+    Final FIRST(+) = {'+'}
+    Adding FIRST(+) - {ε} = {'+'} to FIRST(X)
+    Current FIRST(X) = {'+'}
+    + doesn't have ε, stopping here for this production
+  Production 2: X -> ε
+    This is epsilon production, adding ε to FIRST(X)
+Final FIRST(X) = {'+', 'ε'}
+--- FIRST(X) = {'+', 'ε'} ---
+
+
+--- Computing FIRST(T) ---
+Computing FIRST(T)
+FIRST(T) already computed = {'(', 'id'}
+--- FIRST(T) = {'(', 'id'} ---
+
+
+--- Computing FIRST(Y) ---
+Computing FIRST(Y)
+Y is non-terminal with productions: [['*', 'F', 'Y'], ['ε']]
+  Production 1: Y -> * F Y
+    Processing symbols in production...
+    Processing symbol 1: *
+    Computing FIRST(*)
+    * is terminal, so FIRST(*) = {*}
+    Final FIRST(*) = {'*'}
+    Adding FIRST(*) - {ε} = {'*'} to FIRST(Y)
+    Current FIRST(Y) = {'*'}
+    * doesn't have ε, stopping here for this production
+  Production 2: Y -> ε
+    This is epsilon production, adding ε to FIRST(Y)
+Final FIRST(Y) = {'*', 'ε'}
+--- FIRST(Y) = {'*', 'ε'} ---
+
+
+--- Computing FIRST(F) ---
+Computing FIRST(F)
+FIRST(F) already computed = {'(', 'id'}
+--- FIRST(F) = {'(', 'id'} ---
+
+
+==================================================
+COMPUTING FOLLOW SETS
+==================================================
+
+--- Computing FOLLOW(E) ---
+Computing FOLLOW(E)
+E is start symbol, adding $ to FOLLOW(E)
+  Checking production: E -> T X
+  Checking production: X -> + T X
+  Checking production: X -> ε
+  Checking production: T -> F Y
+  Checking production: Y -> * F Y
+  Checking production: Y -> ε
+  Checking production: F -> ( E )
+    Found E at position 1
+    Next symbol is )
+  Computing FIRST())
+  ) is terminal, so FIRST()) = {)}
+  Final FIRST()) = {')'}
+    Adding FIRST()) - {ε} = {')'} to FOLLOW(E)
+    Current FOLLOW(E) = {'$', ')'}
+  Checking production: F -> id
+Updated FOLLOW(E) = {'$', ')'}
+--- FOLLOW(E) = {'$', ')'} ---
+
+
+--- Computing FOLLOW(X) ---
+Computing FOLLOW(X)
+  Checking production: E -> T X
+    Found X at position 1
+    X is at the end of production
+    Need to add FOLLOW(E) to FOLLOW(X)
+  Computing FOLLOW(E)
+    Checking production: E -> T X
+    Checking production: X -> + T X
+    Checking production: X -> ε
+    Checking production: T -> F Y
+    Checking production: Y -> * F Y
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+      Found E at position 1
+      Next symbol is )
+    Computing FIRST())
+    FIRST()) already computed = {')'}
+      Current FOLLOW(E) = {'$', ')'}
+    Checking production: F -> id
+  No new symbols added to FOLLOW(E) = {'$', ')'}
+    Added FOLLOW(E) = {'$', ')'} to FOLLOW(X)
+  Checking production: X -> + T X
+    Found X at position 2
+    X is at the end of production
+    X == X, skipping to avoid infinite recursion
+  Checking production: X -> ε
+  Checking production: T -> F Y
+  Checking production: Y -> * F Y
+  Checking production: Y -> ε
+  Checking production: F -> ( E )
+  Checking production: F -> id
+Updated FOLLOW(X) = {'$', ')'}
+--- FOLLOW(X) = {'$', ')'} ---
+
+
+--- Computing FOLLOW(T) ---
+Computing FOLLOW(T)
+  Checking production: E -> T X
+    Found T at position 0
+    Next symbol is X
+  Computing FIRST(X)
+  FIRST(X) already computed = {'+', 'ε'}
+    Adding FIRST(X) - {ε} = {'+'} to FOLLOW(T)
+    Current FOLLOW(T) = {'+'}
+    X can derive ε, need to add FOLLOW(E) to FOLLOW(T)
+  Computing FOLLOW(E)
+    Checking production: E -> T X
+    Checking production: X -> + T X
+    Checking production: X -> ε
+    Checking production: T -> F Y
+    Checking production: Y -> * F Y
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+      Found E at position 1
+      Next symbol is )
+    Computing FIRST())
+    FIRST()) already computed = {')'}
+      Current FOLLOW(E) = {'$', ')'}
+    Checking production: F -> id
+  No new symbols added to FOLLOW(E) = {'$', ')'}
+    Added FOLLOW(E) = {'$', ')'} to FOLLOW(T)
+  Checking production: X -> + T X
+    Found T at position 1
+    Next symbol is X
+  Computing FIRST(X)
+  FIRST(X) already computed = {'+', 'ε'}
+    Current FOLLOW(T) = {'+', '$', ')'}
+    X can derive ε, need to add FOLLOW(X) to FOLLOW(T)
+  Computing FOLLOW(X)
+    Checking production: E -> T X
+      Found X at position 1
+      X is at the end of production
+      Need to add FOLLOW(E) to FOLLOW(X)
+    Computing FOLLOW(E)
+      Checking production: E -> T X
+      Checking production: X -> + T X
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+        Found E at position 1
+        Next symbol is )
+      Computing FIRST())
+      FIRST()) already computed = {')'}
+        Current FOLLOW(E) = {'$', ')'}
+      Checking production: F -> id
+    No new symbols added to FOLLOW(E) = {'$', ')'}
+    Checking production: X -> + T X
+      Found X at position 2
+      X is at the end of production
+      X == X, skipping to avoid infinite recursion
+    Checking production: X -> ε
+    Checking production: T -> F Y
+    Checking production: Y -> * F Y
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+    Checking production: F -> id
+  No new symbols added to FOLLOW(X) = {'$', ')'}
+  Checking production: X -> ε
+  Checking production: T -> F Y
+  Checking production: Y -> * F Y
+  Checking production: Y -> ε
+  Checking production: F -> ( E )
+  Checking production: F -> id
+Updated FOLLOW(T) = {'$', ')', '+'}
+--- FOLLOW(T) = {'$', ')', '+'} ---
+
+
+--- Computing FOLLOW(Y) ---
+Computing FOLLOW(Y)
+  Checking production: E -> T X
+  Checking production: X -> + T X
+  Checking production: X -> ε
+  Checking production: T -> F Y
+    Found Y at position 1
+    Y is at the end of production
+    Need to add FOLLOW(T) to FOLLOW(Y)
+  Computing FOLLOW(T)
+    Checking production: E -> T X
+      Found T at position 0
+      Next symbol is X
+    Computing FIRST(X)
+    FIRST(X) already computed = {'+', 'ε'}
+      Current FOLLOW(T) = {'$', ')', '+'}
+      X can derive ε, need to add FOLLOW(E) to FOLLOW(T)
+    Computing FOLLOW(E)
+      Checking production: E -> T X
+      Checking production: X -> + T X
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+        Found E at position 1
+        Next symbol is )
+      Computing FIRST())
+      FIRST()) already computed = {')'}
+        Current FOLLOW(E) = {'$', ')'}
+      Checking production: F -> id
+    No new symbols added to FOLLOW(E) = {'$', ')'}
+    Checking production: X -> + T X
+      Found T at position 1
+      Next symbol is X
+    Computing FIRST(X)
+    FIRST(X) already computed = {'+', 'ε'}
+      Current FOLLOW(T) = {'$', ')', '+'}
+      X can derive ε, need to add FOLLOW(X) to FOLLOW(T)
+    Computing FOLLOW(X)
+      Checking production: E -> T X
+        Found X at position 1
+        X is at the end of production
+        Need to add FOLLOW(E) to FOLLOW(X)
+      Computing FOLLOW(E)
+        Checking production: E -> T X
+        Checking production: X -> + T X
+        Checking production: X -> ε
+        Checking production: T -> F Y
+        Checking production: Y -> * F Y
+        Checking production: Y -> ε
+        Checking production: F -> ( E )
+          Found E at position 1
+          Next symbol is )
+        Computing FIRST())
+        FIRST()) already computed = {')'}
+          Current FOLLOW(E) = {'$', ')'}
+        Checking production: F -> id
+      No new symbols added to FOLLOW(E) = {'$', ')'}
+      Checking production: X -> + T X
+        Found X at position 2
+        X is at the end of production
+        X == X, skipping to avoid infinite recursion
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+      Checking production: F -> id
+    No new symbols added to FOLLOW(X) = {'$', ')'}
+    Checking production: X -> ε
+    Checking production: T -> F Y
+    Checking production: Y -> * F Y
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+    Checking production: F -> id
+  No new symbols added to FOLLOW(T) = {'$', ')', '+'}
+    Added FOLLOW(T) = {'+', '$', ')'} to FOLLOW(Y)
+  Checking production: Y -> * F Y
+    Found Y at position 2
+    Y is at the end of production
+    Y == Y, skipping to avoid infinite recursion
+  Checking production: Y -> ε
+  Checking production: F -> ( E )
+  Checking production: F -> id
+Updated FOLLOW(Y) = {'+', '$', ')'}
+--- FOLLOW(Y) = {'+', '$', ')'} ---
+
+
+--- Computing FOLLOW(F) ---
+Computing FOLLOW(F)
+  Checking production: E -> T X
+  Checking production: X -> + T X
+  Checking production: X -> ε
+  Checking production: T -> F Y
+    Found F at position 0
+    Next symbol is Y
+  Computing FIRST(Y)
+  FIRST(Y) already computed = {'*', 'ε'}
+    Adding FIRST(Y) - {ε} = {'*'} to FOLLOW(F)
+    Current FOLLOW(F) = {'*'}
+    Y can derive ε, need to add FOLLOW(T) to FOLLOW(F)
+  Computing FOLLOW(T)
+    Checking production: E -> T X
+      Found T at position 0
+      Next symbol is X
+    Computing FIRST(X)
+    FIRST(X) already computed = {'+', 'ε'}
+      Current FOLLOW(T) = {'$', ')', '+'}
+      X can derive ε, need to add FOLLOW(E) to FOLLOW(T)
+    Computing FOLLOW(E)
+      Checking production: E -> T X
+      Checking production: X -> + T X
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+        Found E at position 1
+        Next symbol is )
+      Computing FIRST())
+      FIRST()) already computed = {')'}
+        Current FOLLOW(E) = {'$', ')'}
+      Checking production: F -> id
+    No new symbols added to FOLLOW(E) = {'$', ')'}
+    Checking production: X -> + T X
+      Found T at position 1
+      Next symbol is X
+    Computing FIRST(X)
+    FIRST(X) already computed = {'+', 'ε'}
+      Current FOLLOW(T) = {'$', ')', '+'}
+      X can derive ε, need to add FOLLOW(X) to FOLLOW(T)
+    Computing FOLLOW(X)
+      Checking production: E -> T X
+        Found X at position 1
+        X is at the end of production
+        Need to add FOLLOW(E) to FOLLOW(X)
+      Computing FOLLOW(E)
+        Checking production: E -> T X
+        Checking production: X -> + T X
+        Checking production: X -> ε
+        Checking production: T -> F Y
+        Checking production: Y -> * F Y
+        Checking production: Y -> ε
+        Checking production: F -> ( E )
+          Found E at position 1
+          Next symbol is )
+        Computing FIRST())
+        FIRST()) already computed = {')'}
+          Current FOLLOW(E) = {'$', ')'}
+        Checking production: F -> id
+      No new symbols added to FOLLOW(E) = {'$', ')'}
+      Checking production: X -> + T X
+        Found X at position 2
+        X is at the end of production
+        X == X, skipping to avoid infinite recursion
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+      Checking production: F -> id
+    No new symbols added to FOLLOW(X) = {'$', ')'}
+    Checking production: X -> ε
+    Checking production: T -> F Y
+    Checking production: Y -> * F Y
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+    Checking production: F -> id
+  No new symbols added to FOLLOW(T) = {'$', ')', '+'}
+    Added FOLLOW(T) = {'+', '$', ')'} to FOLLOW(F)
+  Checking production: Y -> * F Y
+    Found F at position 1
+    Next symbol is Y
+  Computing FIRST(Y)
+  FIRST(Y) already computed = {'*', 'ε'}
+    Current FOLLOW(F) = {'*', '$', ')', '+'}
+    Y can derive ε, need to add FOLLOW(Y) to FOLLOW(F)
+  Computing FOLLOW(Y)
+    Checking production: E -> T X
+    Checking production: X -> + T X
+    Checking production: X -> ε
+    Checking production: T -> F Y
+      Found Y at position 1
+      Y is at the end of production
+      Need to add FOLLOW(T) to FOLLOW(Y)
+    Computing FOLLOW(T)
+      Checking production: E -> T X
+        Found T at position 0
+        Next symbol is X
+      Computing FIRST(X)
+      FIRST(X) already computed = {'+', 'ε'}
+        Current FOLLOW(T) = {'$', ')', '+'}
+        X can derive ε, need to add FOLLOW(E) to FOLLOW(T)
+      Computing FOLLOW(E)
+        Checking production: E -> T X
+        Checking production: X -> + T X
+        Checking production: X -> ε
+        Checking production: T -> F Y
+        Checking production: Y -> * F Y
+        Checking production: Y -> ε
+        Checking production: F -> ( E )
+          Found E at position 1
+          Next symbol is )
+        Computing FIRST())
+        FIRST()) already computed = {')'}
+          Current FOLLOW(E) = {'$', ')'}
+        Checking production: F -> id
+      No new symbols added to FOLLOW(E) = {'$', ')'}
+      Checking production: X -> + T X
+        Found T at position 1
+        Next symbol is X
+      Computing FIRST(X)
+      FIRST(X) already computed = {'+', 'ε'}
+        Current FOLLOW(T) = {'$', ')', '+'}
+        X can derive ε, need to add FOLLOW(X) to FOLLOW(T)
+      Computing FOLLOW(X)
+        Checking production: E -> T X
+          Found X at position 1
+          X is at the end of production
+          Need to add FOLLOW(E) to FOLLOW(X)
+        Computing FOLLOW(E)
+          Checking production: E -> T X
+          Checking production: X -> + T X
+          Checking production: X -> ε
+          Checking production: T -> F Y
+          Checking production: Y -> * F Y
+          Checking production: Y -> ε
+          Checking production: F -> ( E )
+            Found E at position 1
+            Next symbol is )
+          Computing FIRST())
+          FIRST()) already computed = {')'}
+            Current FOLLOW(E) = {'$', ')'}
+          Checking production: F -> id
+        No new symbols added to FOLLOW(E) = {'$', ')'}
+        Checking production: X -> + T X
+          Found X at position 2
+          X is at the end of production
+          X == X, skipping to avoid infinite recursion
+        Checking production: X -> ε
+        Checking production: T -> F Y
+        Checking production: Y -> * F Y
+        Checking production: Y -> ε
+        Checking production: F -> ( E )
+        Checking production: F -> id
+      No new symbols added to FOLLOW(X) = {'$', ')'}
+      Checking production: X -> ε
+      Checking production: T -> F Y
+      Checking production: Y -> * F Y
+      Checking production: Y -> ε
+      Checking production: F -> ( E )
+      Checking production: F -> id
+    No new symbols added to FOLLOW(T) = {'$', ')', '+'}
+    Checking production: Y -> * F Y
+      Found Y at position 2
+      Y is at the end of production
+      Y == Y, skipping to avoid infinite recursion
+    Checking production: Y -> ε
+    Checking production: F -> ( E )
+    Checking production: F -> id
+  No new symbols added to FOLLOW(Y) = {'$', ')', '+'}
+  Checking production: Y -> ε
+  Checking production: F -> ( E )
+  Checking production: F -> id
+Updated FOLLOW(F) = {'*', '$', ')', '+'}
+--- FOLLOW(F) = {'*', '$', ')', '+'} ---
+
+
+==================================================
+FINAL RESULTS
+==================================================
 FIRST sets:
-FIRST(E) = {'id', '('}
+FIRST(E) = {'(', 'id'}
 FIRST(X) = {'+', 'ε'}
-FIRST(T) = {'id', '('}
-FIRST(Y) = {'ε', '*'}
-FIRST(F) = {'id', '('}
+FIRST(T) = {'(', 'id'}
+FIRST(Y) = {'*', 'ε'}
+FIRST(F) = {'(', 'id'}
 
 FOLLOW sets:
-FOLLOW(E) = {')', '$'}
-FOLLOW(X) = {')', '$'}
-FOLLOW(T) = {')', '$', '+'}
-FOLLOW(Y) = {')', '$', '+'}
-FOLLOW(F) = {')', '$', '+', '*'}
-PS C:\Users\Joseph\Desktop\compiler design\expt4> 
+FOLLOW(E) = {'$', ')'}
+FOLLOW(X) = {'$', ')'}
+FOLLOW(T) = {'$', ')', '+'}
+FOLLOW(Y) = {'$', ')', '+'}
+FOLLOW(F) = {'*', '$', ')', '+'}
+==================================================
+PS C:\Users\Joseph\Desktop\compiler design\expt4>
