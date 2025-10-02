@@ -1,1 +1,4 @@
-A -> A a | b
+A -> A a | A b | c | d
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id

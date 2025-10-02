@@ -1,0 +1,144 @@
+PS C:\Users\Joseph\Desktop\compiler design\expt5> python expt5a.py
+🚀 LEFT RECURSION ELIMINATION DEMONSTRATION
+================================================================================
+
+📖 Reading grammar from: grammar.txt
+
+📋 ORIGINAL GRAMMAR:
+========================================
+  A → A a | A b | c | d
+  E → E + T | T
+  T → T * F | F
+  F → ( E ) | id
+
+
+🔍 CHECKING FOR LEFT RECURSION:
+Left recursion occurs when: A → Aα (A appears as first symbol on RHS)
+
+================================================================================
+LEFT RECURSION ELIMINATION ALGORITHM
+================================================================================
+
+FORMULA:
+If we have: A → Aα₁ | Aα₂ | ... | Aαₘ | β₁ | β₂ | ... | βₙ
+Transform to:
+A → β₁A' | β₂A' | ... | βₙA'
+A' → α₁A' | α₂A' | ... | αₘA' | ε
+
+Where:
+- α represents the part after A in left-recursive productions
+- β represents non-left-recursive productions
+- A' is a new non-terminal
+- ε is epsilon (empty string)
+
+------------------------------------------------------------
+PROCESSING NON-TERMINAL: A
+------------------------------------------------------------
+
+Analyzing productions for A:
+  A → Aa [LEFT RECURSIVE - α = 'a']
+  A → Ab [LEFT RECURSIVE - α = 'b']
+  A → c [NON-LEFT RECURSIVE - β = 'c']
+  A → d [NON-LEFT RECURSIVE - β = 'd']
+
+Collected α parts: ['a', 'b']
+Collected β parts: ['c', 'd']
+
+🔄 LEFT RECURSION DETECTED! Applying transformation...
+Creating new non-terminal: A'
+
+Step 1: Transform A productions
+Formula: A → β₁A' | β₂A' | ... | βₙA'
+  β1 = 'c' → A → c A'
+  β2 = 'd' → A → d A'
+
+Step 2: Create A' productions
+Formula: A' → α₁A' | α₂A' | ... | αₘA' | ε
+  α1 = 'a' → A' → a A'
+  α2 = 'b' → A' → b A'
+  Adding epsilon: A' → ε
+
+✅ Transformation complete for A
+
+------------------------------------------------------------
+PROCESSING NON-TERMINAL: E
+------------------------------------------------------------
+
+Analyzing productions for E:
+  E → E+ T [LEFT RECURSIVE - α = '+ T']
+  E → T [NON-LEFT RECURSIVE - β = 'T']
+
+Collected α parts: ['+ T']
+Collected β parts: ['T']
+
+🔄 LEFT RECURSION DETECTED! Applying transformation...
+Creating new non-terminal: E'
+
+Step 1: Transform E productions
+Formula: E → β₁E' | β₂E' | ... | βₙE'
+  β1 = 'T' → E → T E'
+
+Step 2: Create E' productions
+Formula: E' → α₁E' | α₂E' | ... | αₘE' | ε
+  α1 = '+ T' → E' → + T E'
+  Adding epsilon: E' → ε
+
+✅ Transformation complete for E
+
+------------------------------------------------------------
+PROCESSING NON-TERMINAL: T
+------------------------------------------------------------
+
+Analyzing productions for T:
+  T → T* F [LEFT RECURSIVE - α = '* F']
+  T → F [NON-LEFT RECURSIVE - β = 'F']
+
+Collected α parts: ['* F']
+Collected β parts: ['F']
+
+🔄 LEFT RECURSION DETECTED! Applying transformation...
+Creating new non-terminal: T'
+
+Step 1: Transform T productions
+Formula: T → β₁T' | β₂T' | ... | βₙT'
+  β1 = 'F' → T → F T'
+
+Step 2: Create T' productions
+Formula: T' → α₁T' | α₂T' | ... | αₘT' | ε
+  α1 = '* F' → T' → * F T'
+  Adding epsilon: T' → ε
+
+✅ Transformation complete for T
+
+------------------------------------------------------------
+PROCESSING NON-TERMINAL: F
+------------------------------------------------------------
+
+Analyzing productions for F:
+  F → ( E ) [NON-LEFT RECURSIVE - β = '( E )']
+  F → id [NON-LEFT RECURSIVE - β = 'id']
+
+Collected α parts: []
+Collected β parts: ['( E )', 'id']
+
+✅ No left recursion found for F
+Keeping original productions unchanged
+
+================================================================================
+🎯 FINAL RESULT - GRAMMAR AFTER ELIMINATING LEFT RECURSION:
+================================================================================
+  A → c A' | d A'
+  A' → a A' | b A' | ε
+  E → T E'
+  E' → + T E' | ε
+  T → F T'
+  T' → * F T' | ε
+  F → ( E ) | id
+
+
+📚 SUMMARY:
+- Left recursion has been successfully eliminated
+- New non-terminals with ' (prime) have been introduced
+- The grammar is now suitable for top-down parsing
+- Epsilon (ε) productions handle the recursive nature
+PS C:\Users\Joseph\Desktop\compiler design\expt5>
