@@ -1,0 +1,468 @@
+PS C:\Users\Joseph\Desktop\compiler design> cd expt4
+PS C:\Users\Joseph\Desktop\compiler design\expt4> python expt4a_optimized.py
+📖 Reading grammar from file...
+📋 Grammar loaded:
+  E → T X
+  X → + T X
+  X → ε
+  T → F Y
+  Y → * F Y
+  Y → ε
+  F → ( E )
+  F → id
+
+============================================================
+🎯 COMPUTING FIRST SETS WITH MEMOIZATION
+============================================================
+
+==================== FIRST(E) ====================
+
+🔄 Computing FIRST(E)...
+  📝 E is non-terminal with productions: [['T', 'X']]
+    Production 1: E → T X
+      🔍 Processing symbol 1: T
+
+🔄 Computing FIRST(T)...
+  📝 T is non-terminal with productions: [['F', 'Y']]
+    Production 1: T → F Y
+      🔍 Processing symbol 1: F
+
+🔄 Computing FIRST(F)...
+  📝 F is non-terminal with productions: [['(', 'E', ')'], ['id']]
+    Production 1: F → ( E )
+      🔍 Processing symbol 1: (
+
+🔄 Computing FIRST(()...
+  📝 ( is terminal → FIRST(() = {(}
+  ✅ Final FIRST(() = {'('}
+        ➕ Added {'('} from FIRST(() to FIRST(F)
+        🛑 ( doesn't derive ε, stopping here
+    Production 2: F → id
+      🔍 Processing symbol 1: id
+
+🔄 Computing FIRST(id)...
+  📝 id is terminal → FIRST(id) = {id}
+  ✅ Final FIRST(id) = {'id'}
+        ➕ Added {'id'} from FIRST(id) to FIRST(F)
+        🛑 id doesn't derive ε, stopping here
+  ✅ Final FIRST(F) = {'(', 'id'}
+        ➕ Added {'(', 'id'} from FIRST(F) to FIRST(T)
+        🛑 F doesn't derive ε, stopping here
+  ✅ Final FIRST(T) = {'(', 'id'}
+        ➕ Added {'(', 'id'} from FIRST(T) to FIRST(E)
+        🛑 T doesn't derive ε, stopping here
+  ✅ Final FIRST(E) = {'(', 'id'}
+
+==================== FIRST(X) ====================
+
+🔄 Computing FIRST(X)...
+  📝 X is non-terminal with productions: [['+', 'T', 'X'], ['ε']]
+    Production 1: X → + T X
+      🔍 Processing symbol 1: +
+
+🔄 Computing FIRST(+)...
+  📝 + is terminal → FIRST(+) = {+}
+  ✅ Final FIRST(+) = {'+'}
+        ➕ Added {'+'} from FIRST(+) to FIRST(X)
+        🛑 + doesn't derive ε, stopping here
+    Production 2: X → ε
+      ✅ Added ε to FIRST(X)
+  ✅ Final FIRST(X) = {'+', 'ε'}
+
+==================== FIRST(T) ====================
+✓ FIRST(T) already computed: {'(', 'id'}
+
+==================== FIRST(Y) ====================
+
+🔄 Computing FIRST(Y)...
+  📝 Y is non-terminal with productions: [['*', 'F', 'Y'], ['ε']]
+    Production 1: Y → * F Y
+      🔍 Processing symbol 1: *
+
+🔄 Computing FIRST(*)...
+  📝 * is terminal → FIRST(*) = {*}
+  ✅ Final FIRST(*) = {'*'}
+        ➕ Added {'*'} from FIRST(*) to FIRST(Y)
+        🛑 * doesn't derive ε, stopping here
+    Production 2: Y → ε
+      ✅ Added ε to FIRST(Y)
+  ✅ Final FIRST(Y) = {'*', 'ε'}
+
+==================== FIRST(F) ====================
+✓ FIRST(F) already computed: {'(', 'id'}
+
+============================================================
+🎯 COMPUTING FOLLOW SETS WITH MEMOIZATION
+============================================================
+
+==================== FOLLOW(E) ====================
+
+🔄 Computing FOLLOW(E)...
+  📝 E is start symbol → Added $ to FOLLOW(E)
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+
+🔄 Computing FIRST())...
+  📝 ) is terminal → FIRST()) = {)}
+  ✅ Final FIRST()) = {')'}
+        ➕ Added {')'} from FIRST()) to FOLLOW(E)
+  🔍 Checking: F → id
+  ✅ Updated FOLLOW(E) = {'$', ')'}
+
+==================== FOLLOW(X) ====================
+
+🔄 Computing FOLLOW(X)...
+  🔍 Checking: E → T X
+    ✓ Found X at position 1
+      📍 X is at end of production
+        ⚠ Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+        ➕ Added {'$', ')'} from FOLLOW(E) to FOLLOW(X)
+  🔍 Checking: X → + T X
+    ✓ Found X at position 2
+      📍 X is at end of production
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ Updated FOLLOW(X) = {'$', ')'}
+
+==================== FOLLOW(T) ====================
+
+🔄 Computing FOLLOW(T)...
+  🔍 Checking: E → T X
+    ✓ Found T at position 0
+      📍 Next symbol: X
+        ➕ Added {'+'} from FIRST(X) to FOLLOW(T)
+        ⚠ X can derive ε → Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+        ➕ Added {'$', ')'} from FOLLOW(E) to FOLLOW(T)
+  🔍 Checking: X → + T X
+    ✓ Found T at position 1
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(X)
+
+🔄 Computing FOLLOW(X)...
+  🔍 Checking: E → T X
+    ✓ Found X at position 1
+      📍 X is at end of production
+        ⚠ Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found X at position 2
+      📍 X is at end of production
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(X) = {'$', ')'}
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ Updated FOLLOW(T) = {'$', '+', ')'}
+
+==================== FOLLOW(Y) ====================
+
+🔄 Computing FOLLOW(Y)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+    ✓ Found Y at position 1
+      📍 Y is at end of production
+        ⚠ Need FOLLOW(T)
+
+🔄 Computing FOLLOW(T)...
+  🔍 Checking: E → T X
+    ✓ Found T at position 0
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found T at position 1
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(X)
+
+🔄 Computing FOLLOW(X)...
+  🔍 Checking: E → T X
+    ✓ Found X at position 1
+      📍 X is at end of production
+        ⚠ Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found X at position 2
+      📍 X is at end of production
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(X) = {'$', ')'}
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(T) = {'$', '+', ')'}
+        ➕ Added {'$', '+', ')'} from FOLLOW(T) to FOLLOW(Y)
+  🔍 Checking: Y → * F Y
+    ✓ Found Y at position 2
+      📍 Y is at end of production
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ Updated FOLLOW(Y) = {'$', '+', ')'}
+
+==================== FOLLOW(F) ====================
+
+🔄 Computing FOLLOW(F)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+    ✓ Found F at position 0
+      📍 Next symbol: Y
+        ➕ Added {'*'} from FIRST(Y) to FOLLOW(F)
+        ⚠ Y can derive ε → Need FOLLOW(T)
+
+🔄 Computing FOLLOW(T)...
+  🔍 Checking: E → T X
+    ✓ Found T at position 0
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found T at position 1
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(X)
+
+🔄 Computing FOLLOW(X)...
+  🔍 Checking: E → T X
+    ✓ Found X at position 1
+      📍 X is at end of production
+        ⚠ Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found X at position 2
+      📍 X is at end of production
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(X) = {'$', ')'}
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(T) = {'$', '+', ')'}
+        ➕ Added {'$', '+', ')'} from FOLLOW(T) to FOLLOW(F)
+  🔍 Checking: Y → * F Y
+    ✓ Found F at position 1
+      📍 Next symbol: Y
+        ⚠ Y can derive ε → Need FOLLOW(Y)
+
+🔄 Computing FOLLOW(Y)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+    ✓ Found Y at position 1
+      📍 Y is at end of production
+        ⚠ Need FOLLOW(T)
+
+🔄 Computing FOLLOW(T)...
+  🔍 Checking: E → T X
+    ✓ Found T at position 0
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found T at position 1
+      📍 Next symbol: X
+        ⚠ X can derive ε → Need FOLLOW(X)
+
+🔄 Computing FOLLOW(X)...
+  🔍 Checking: E → T X
+    ✓ Found X at position 1
+      📍 X is at end of production
+        ⚠ Need FOLLOW(E)
+
+🔄 Computing FOLLOW(E)...
+  🔍 Checking: E → T X
+  🔍 Checking: X → + T X
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+    ✓ Found E at position 1
+      📍 Next symbol: )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(E) = {'$', ')'}
+  🔍 Checking: X → + T X
+    ✓ Found X at position 2
+      📍 X is at end of production
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(X) = {'$', ')'}
+  🔍 Checking: X → ε
+  🔍 Checking: T → F Y
+  🔍 Checking: Y → * F Y
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(T) = {'$', '+', ')'}
+  🔍 Checking: Y → * F Y
+    ✓ Found Y at position 2
+      📍 Y is at end of production
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ No changes to FOLLOW(Y) = {'$', '+', ')'}
+  🔍 Checking: Y → ε
+  🔍 Checking: F → ( E )
+  🔍 Checking: F → id
+  ✅ Updated FOLLOW(F) = {'$', '+', ')', '*'}
+
+============================================================
+📊 FINAL RESULTS
+============================================================
+
+🔤 FIRST SETS:
+  FIRST(E) = {'(', 'id'}
+  FIRST(X) = {'+', 'ε'}
+  FIRST(T) = {'(', 'id'}
+  FIRST(Y) = {'*', 'ε'}
+  FIRST(F) = {'(', 'id'}
+
+🔤 FOLLOW SETS:
+  FOLLOW(E) = {'$', ')'}
+  FOLLOW(X) = {'$', ')'}
+  FOLLOW(T) = {'$', '+', ')'}
+  FOLLOW(Y) = {'$', '+', ')'}
+  FOLLOW(F) = {'$', '+', ')', '*'}
+
+📈 COMPUTATION STATISTICS:
+  Total FIRST computations avoided by memoization: 2
+  Total computation steps logged: 373
+PS C:\Users\Joseph\Desktop\compiler design\expt4> 
