@@ -10,7 +10,7 @@ def compute_first(symbol, grammar, first_sets):
         first.add(symbol)
     else:
         for production in grammar[symbol]:
-            if production == "ε":  # epsilon
+            if production == ["ε"]:  # epsilon
                 first.add("ε")
             else:
                 for char in production:
@@ -38,12 +38,12 @@ def compute_follow(symbol, grammar, first_sets, follow_sets, start_symbol):
                         next_first = compute_first(next_char, grammar, first_sets)
                         follow_sets[symbol] |= (next_first - {"ε"})
                         if "ε" in next_first:
-                            follow_sets[symbol] |= compute_follow(lhs, grammar, first_sets, follow_sets, start_symbol)
+                            if lhs != symbol:
+                                follow_sets[symbol] |= (compute_follow(lhs, grammar, first_sets, follow_sets, start_symbol) - {"ε"})
                     else:
                         if lhs != symbol:
-                            follow_sets[symbol] |= compute_follow(lhs, grammar, first_sets, follow_sets, start_symbol)
+                            follow_sets[symbol] |= (compute_follow(lhs, grammar, first_sets, follow_sets, start_symbol) - {"ε"})
     return follow_sets[symbol]
-
 
 # ---------------- MAIN ----------------
 def main():
@@ -58,28 +58,30 @@ def main():
                 lhs = lhs.strip()
                 productions = rhs.strip().split("|")
                 for prod in productions:
-                    grammar[lhs].append(prod.strip().split())
+                    # Replace 'epsilon' with 'ε' automatically
+                    prod_symbols = prod.strip().split()
+                    prod_symbols = ["ε" if sym.lower() == "epsilon" else sym for sym in prod_symbols]
+                    grammar[lhs].append(prod_symbols)
 
     first_sets = {}
     follow_sets = defaultdict(set)
-
     start_symbol = list(grammar.keys())[0]  # first non-terminal is start
 
-    # Compute FIRST sets
+    # Compute FIRST sets for non-terminals only
     for non_terminal in grammar:
         compute_first(non_terminal, grammar, first_sets)
 
-    # Compute FOLLOW sets
+    # Compute FOLLOW sets for non-terminals only
     for non_terminal in grammar:
         compute_follow(non_terminal, grammar, first_sets, follow_sets, start_symbol)
 
-    # Print Results
+    # Print Results (non-terminals only)
     print("FIRST sets:")
-    for nt in first_sets:
+    for nt in grammar:  # only non-terminals
         print(f"FIRST({nt}) = {first_sets[nt]}")
 
     print("\nFOLLOW sets:")
-    for nt in follow_sets:
+    for nt in grammar:  # only non-terminals
         print(f"FOLLOW({nt}) = {follow_sets[nt]}")
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 E -> T X
-X -> + T X | ε
+X -> + T X | epsilon
 T -> F Y
-Y -> * F Y | ε
+Y -> * F Y | epsilon
 F -> ( E ) | id

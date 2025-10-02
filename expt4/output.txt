@@ -1,0 +1,15 @@
+PS C:\Users\Joseph\Desktop\compiler design\expt4> python expt4a.py
+FIRST sets:
+FIRST(E) = {'id', '('}
+FIRST(X) = {'+', 'ε'}
+FIRST(T) = {'id', '('}
+FIRST(Y) = {'ε', '*'}
+FIRST(F) = {'id', '('}
+
+FOLLOW sets:
+FOLLOW(E) = {')', '$'}
+FOLLOW(X) = {')', '$'}
+FOLLOW(T) = {')', '$', '+'}
+FOLLOW(Y) = {')', '$', '+'}
+FOLLOW(F) = {')', '$', '+', '*'}
+PS C:\Users\Joseph\Desktop\compiler design\expt4> 
