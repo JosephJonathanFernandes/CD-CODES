@@ -1,2 +1,14 @@
-Lex is powerful. Lex makes lexical analyzers.
-Lex helps in compiler design, and lex is useful.
+LEX lex Lex is POWERFUL! The lexical analyzer, reads text123 and
+counts@words#correctly. Case CASE case testing: Hello HELLO hello.
+Numbers456ignore789these, punctuation!!! and symbols@#$% too.
+
+Frequency test: word word word appears three times.
+Single letters: a A i I become lowercase.
+Programming keywords: int float while for if else.
+
+   Whitespace    testing	with	tabs
+line
+breaks
+work.
+
+Final comprehensive test combines: EVERYTHING everything everything!

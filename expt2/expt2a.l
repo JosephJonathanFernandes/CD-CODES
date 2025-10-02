@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 int lineno = 1;
+char comment_buffer[1000];  // Buffer to store multi-line comments
 %}
 
 %x COMMENT
@@ -19,14 +20,14 @@ int lineno = 1;
 [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,} { printf("<EMAIL, %s >\n", yytext); }
 
 "=="|"!="|"<="|">="|"="|"+"|"-"|"*"|"/"|">"|"<"   { printf("<OPERATOR, %s >\n", yytext); }
-"{"|"}"|"("|")"|";"|","                  { printf("<PUNCTUATOR, %s >\n", yytext); }
+"{"|"}"|"("|")"|";"|","|"["|"]"                  { printf("<PUNCTUATOR, %s >\n", yytext); }
 
-"//".*                    { /* Ignore single-line comments */ }
+"//".*                    { printf("<SINGLE_LINE_COMMENT, %s>\n", yytext); }
 
-"/*"                      { BEGIN(COMMENT); }
-<COMMENT>"*/"             { BEGIN(INITIAL); }
-<COMMENT>\n               { lineno++; }
-<COMMENT>.                { /* Ignore inside comment */ }
+"/*"                      { BEGIN(COMMENT); strcpy(comment_buffer, yytext); }
+<COMMENT>"*/"             { strcat(comment_buffer, yytext); printf("<MULTI_LINE_COMMENT, %s>\n", comment_buffer); BEGIN(INITIAL); }
+<COMMENT>\n               { strcat(comment_buffer, yytext); lineno++; }
+<COMMENT>.                { strcat(comment_buffer, yytext); }
 
 [ \t\r]+                 { /* Ignore whitespace (including CR) */ }
 \n                      { lineno++; }
