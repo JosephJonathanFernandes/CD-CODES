@@ -1,0 +1,6 @@
+# Grammar file example for expt6_steps.py
+Start: S
+Input: b a
+
+S -> S a | b
+A -> a b | a c
