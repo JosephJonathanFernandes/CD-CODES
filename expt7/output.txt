@@ -1,0 +1,79 @@
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison --version
+bison (GNU Bison) 3.8.2
+Written by Robert Corbett and Richard Stallman.
+
+Copyright (C) 2020 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex --version
+flex.exe 2.6.4
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc --version
+gcc.exe (MinGW.org GCC-6.3.0-1) 6.3.0
+Copyright (C) 2016 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d assign.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex assign.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c assign.tab.c -o assign.exe
+PS C:\Users\Joseph\Desktop\compiler design\expt7> echo "x = 3 * (2 + 1);" | .\assign.exe
+Enter assignments like x = 3 + 4; Ctrl+Z then Enter to quit.
+x = 9
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d binexpr.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex binexpr.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c binexpr.tab.c -o binexpr.exe
+PS C:\Users\Joseph\Desktop\compiler design\expt7> echo "12 + 5" | .\binexpr.exe
+Enter binary expressions (num1 op num2). Ctrl+Z then Enter to quit.
+Parsed: 12 + 5 => Result = 17
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d decl.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex decl.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c decl.tab.c -o decl.exe
+decl.l: In function 'yylex':
+decl.l:9:23: error: expected ';' before '{' token
+ [a-zA-Z][a-zA-Z0-9]*    { return ID; }","     { return COMMA; }
+                       ^
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d decl.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex decl.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c decl.tab.c -o decl.exe
+decl.l:9:4: error: stray '\' in program
+ int\b     { return INT; }
+    ^
+decl.l:9:11: error: expected '=', ',', ';', 'asm' or '__attribute__' before '{' token
+ int\b     { return INT; }
+           ^
+decl.l:10:1: error: expected identifier or '(' before '[' token
+ [a-zA-Z][a-zA-Z0-9]*    { return ID; }
+ ^
+decl.l:11:1: error: expected identifier or '(' before string constant
+ ","     { return COMMA; }
+ ^~~
+decl.l:12:1: error: expected identifier or '(' before string constant
+ ";"     { return SEMICOLON; }
+ ^~~
+decl.l:13:1: error: expected identifier or '(' before '[' token
+ [ \t\n]+    ;     // ignore whitespace
+ ^
+decl.l:13:3: error: stray '\' in program
+ [ \t\n]+    ;     // ignore whitespace
+   ^
+decl.l:13:5: error: stray '\' in program
+ [ \t\n]+    ;     // ignore whitespace
+     ^
+decl.l:14:1: error: expected identifier or '(' before '.' token
+ .       { return INVALID; }
+ ^
+decl.l:15:1: error: expected identifier or '(' before '%' token
+ %%
+ ^
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d decl.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex decl.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c decl.tab.c -o decl.exe
+PS C:\Users\Joseph\Desktop\compiler design\expt7> echo "int a, b, c;" | .\decl.exe
+Enter declaration: Valid declaration
+PS C:\Users\Joseph\Desktop\compiler design\expt7> bison -d expr.y
+PS C:\Users\Joseph\Desktop\compiler design\expt7> flex expr.l
+PS C:\Users\Joseph\Desktop\compiler design\expt7> gcc lex.yy.c expr.tab.c -o expr.exe
+PS C:\Users\Joseph\Desktop\compiler design\expt7> echo "3 + 4 * 5" | .\expr.exe
+Enter expression (press Ctrl+Z then Enter to quit on Windows)
+Result = 23
+PS C:\Users\Joseph\Desktop\compiler design\expt7> 

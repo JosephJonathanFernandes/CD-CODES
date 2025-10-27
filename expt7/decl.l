@@ -1,13 +1,14 @@
 %{
 #include "decl.tab.h"
 #include <stdlib.h>
+#include <string.h>
 int yywrap(void){ return 1; }
 %}
 
 %%
-int\b     { return INT; }
-[a-zA-Z][a-zA-Z0-9]*    { return ID; }","     { return COMMA; }
+[a-zA-Z][a-zA-Z0-9]*    { if (strcmp(yytext, "int") == 0) return INT; else return ID; }
+","     { return COMMA; }
 ";"     { return SEMICOLON; }
-[ \t\n]+ ;     // ignore whitespace
+[ \t\n]+    ;     // ignore whitespace
 .       { return INVALID; }
 %%
