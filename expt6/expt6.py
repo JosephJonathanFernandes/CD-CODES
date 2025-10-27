@@ -125,34 +125,106 @@ def construct_table(productions, first, follow):
                     table[(head, terminal)] = prod
     return table
 
+
+def terminals_from_productions(productions):
+    terms = set()
+    nonterms = set(productions.keys())
+    for rhs in productions.values():
+        for prod in rhs:
+            for sym in prod:
+                if sym == 'ε':
+                    continue
+                if sym not in nonterms:
+                    terms.add(sym)
+    return sorted(terms)
+
+
+def pretty_sym(sym):
+    return '#' if sym == 'ε' else sym
+
+
+def print_firsts_and_follows(productions, first, follow):
+    nonterms = list(productions.keys())
+    print('\nCalculated firsts:')
+    for nt in nonterms:
+        print(f"first({nt}) => {sorted(first.get(nt, set()))}")
+
+    print('\nCalculated follows:')
+    for nt in nonterms:
+        print(f"follow({nt}) => {sorted(follow.get(nt, set()))}")
+
+    # Nicely formatted table
+    print('\nFirsts and Follow Result table\n')
+    # header
+    print(f"{'Non-T':<10}{'FIRST':<22}{'FOLLOW':<22}")
+    for nt in nonterms:
+        fset = set(first.get(nt, set()))
+        foset = set(follow.get(nt, set()))
+        print(f"{nt:<10}{str(sorted(fset)):<22}{str(sorted(foset)):<22}")
+
+
+def print_parsing_table(productions, table):
+    nonterms = list(productions.keys())
+    terms = terminals_from_productions(productions)
+    # include $ and ensure unique
+    if '$' not in terms:
+        terms.append('$')
+    # header
+    col_width = 15
+    header = f"{'':<10}"
+    for t in terms:
+        header += f"{t:<{col_width}}"
+    print('\nGenerated parsing table:\n')
+    print(header)
+    for A in nonterms:
+        row = f"{A:<10}"
+        for t in terms:
+            cell = ''
+            if (A, t) in table:
+                prod = table[(A, t)]
+                cell = f"{A}->{ ' '.join(pretty_sym(s) for s in prod)}"
+            row += f"{cell:<{col_width}}"
+        print(row)
+
+
 # Parsing function
 def predictive_parse(input_string, start_symbol, table):
-    # Tokenize input string into grammar tokens (e.g. 'id', '+', '*', '(', ')')
+    # Tokenize input string into grammar tokens (space separated tokens expected)
     tokens = tokenize(input_string)
     tokens.append('$')
     stack = ['$']
     stack.append(start_symbol)
     i = 0
-    print(f"{'Stack':<30}{'Input':<30}{'Action'}")
-    while stack:
-        top = stack.pop()
-        current_input = tokens[i]
-        print(f"{''.join(stack)+top:<30}{' '.join(tokens[i:]):<30}", end='')
+
+    print(f"{'Buffer':<30}{'Stack':<30}{'Action'}")
+    while True:
+        buffer_str = ' '.join(tokens[i:])
+        stack_str = ' '.join(stack)
+        # determine action
+        top = stack.pop() if stack else None
+        current_input = tokens[i] if i < len(tokens) else '$'
+        action = ''
         if top == current_input == '$':
-            print("Accept")
+            print(f"{buffer_str:<30}{stack_str:<30}{'Accept'}")
             return True
         elif top == current_input:
-            print(f"Match {current_input}")
+            action = f"Matched:{current_input}"
+            print(f"{buffer_str:<30}{stack_str:<30}{action}")
             i += 1
         elif (top, current_input) in table:
             prod = table[(top, current_input)]
-            print(f"Output {top} -> {' '.join(prod)}")
+            action = f"T[{top}][{current_input}] = {top}->{ ' '.join(pretty_sym(s) for s in prod)}"
+            print(f"{buffer_str:<30}{stack_str:<30}{action}")
+            # push RHS in reverse (unless epsilon)
             if not (len(prod) == 1 and prod[0] == 'ε'):
                 for symbol in reversed(prod):
                     stack.append(symbol)
         else:
-            print("Error")
+            action = 'Error: no rule'
+            print(f"{buffer_str:<30}{stack_str:<30}{action}")
             return False
+
+        # continue loop
 
 
 def tokenize(s):
@@ -458,9 +530,15 @@ def main(argv=None):
     # Construct Parsing Table
     table = construct_table(productions, first, follow)
 
-    print(f"Input: {input_string}\n")
+    # Print FIRST and FOLLOW nicely
+    print_firsts_and_follows(productions, first, follow)
 
-    # Run parser
+    # Print parsing table
+    print_parsing_table(productions, table)
+
+    print(f"\nInput: {input_string}\n")
+
+    # Run parser (detailed trace)
     result = predictive_parse(input_string, start_symbol, table)
     print('\nParse result:', 'Accepted' if result else 'Rejected')
 
