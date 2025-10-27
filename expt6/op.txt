@@ -1,18 +1,40 @@
+Using grammar from: grammar.txt
+Start symbol: S
+Original grammar:
+
+S -> S a | b
+A -> a b | a c
+
+
+--- Left Recursion Removal Steps ---
+- Direct left recursion detected in S. Creating new non-terminal S' and rewriting productions.
+
+Grammar after left recursion removal:
+
+S -> b S'
+A -> a b | a c
+S' -> a S' | ε
+
+
+--- Left Factoring Steps ---
+- Left factoring on A: common prefix a found; created A'.
+
+Grammar after left factoring:
+
+S -> b S'
+A -> a A'
+S' -> a S' | ε
+A' -> b | c
+
+
+Input: b a
+
 Stack                         Input                         Action
-$E                            id + id * id $                Output E -> T E'
-$E'T                          id + id * id $                Output T -> F T'
-$E'T'F                        id + id * id $                Output F -> id
-$E'T'id                       id + id * id $                Match id
-$E'T'                         + id * id $                   Output T' -> ε
-$E'                           + id * id $                   Output E' -> + T E'
-$E'T+                         + id * id $                   Match +
-$E'T                          id * id $                     Output T -> F T'
-$E'T'F                        id * id $                     Output F -> id
-$E'T'id                       id * id $                     Match id
-$E'T'                         * id $                        Output T' -> * F T'
-$E'T'F*                       * id $                        Match *
-$E'T'F                        id $                          Output F -> id
-$E'T'id                       id $                          Match id
-$E'T'                         $                             Output T' -> ε
-$E'                           $                             Output E' -> ε
+$S                            b a $                         Output S -> b S'
+$S'b                          b a $                         Match b
+$S'                           a $                           Output S' -> a S'
+$S'a                          a $                           Match a
+$S'                           $                             Output S' -> ε
 $                             $                             Accept
+
+Parse result: Accepted

@@ -226,6 +226,151 @@ def load_grammar(path):
     return productions, start_symbol, input_tokens
 
 
+def format_productions(productions):
+    """Return a human friendly string of the grammar productions."""
+    lines = []
+    for head, prods in productions.items():
+        alts = [' '.join(p) for p in prods]
+        lines.append(f"{head} -> {' | '.join(alts)}")
+    return '\n'.join(lines)
+
+
+def remove_left_recursion(productions):
+    """Remove left recursion (indirect + direct) from the grammar.
+
+    Returns (new_productions, steps) where steps is a list of human-readable
+    descriptions of each change performed.
+    """
+    steps = []
+    # Work on a copy
+    prods = {nt: [list(p) for p in rhs] for nt, rhs in productions.items()}
+    nonterminals = list(prods.keys())
+
+    def make_new_nt(base):
+        # append a prime marker; ensure uniqueness
+        candidate = base + "'"
+        while candidate in prods:
+            candidate += "'"
+        return candidate
+
+    for i, Ai in enumerate(nonterminals):
+        # replace Ai -> Aj α where j < i
+        for j in range(i):
+            Aj = nonterminals[j]
+            new_rhs = []
+            changed = False
+            for prod in prods[Ai]:
+                if prod and prod[0] == Aj:
+                    # replace Aj γ with β γ for each Aj -> β
+                    rest = prod[1:]
+                    for beta in prods[Aj]:
+                        new_prod = list(beta) + rest
+                        new_rhs.append(new_prod)
+                    changed = True
+                else:
+                    new_rhs.append(prod)
+            if changed:
+                steps.append(f"Replaced productions of {Ai} that started with {Aj} by expanding {Aj}'s productions")
+                prods[Ai] = new_rhs
+
+        # now remove direct left recursion for Ai
+        alpha = []  # productions where Ai -> Ai α
+        beta = []   # productions where Ai -> β (not starting with Ai)
+        for prod in prods[Ai]:
+            if prod and prod[0] == Ai:
+                alpha.append(prod[1:])
+            else:
+                beta.append(prod)
+
+        if alpha:
+            Aip = make_new_nt(Ai)
+            steps.append(f"Direct left recursion detected in {Ai}. Creating new non-terminal {Aip} and rewriting productions.")
+            # Ai -> beta Aip
+            new_Ai_rhs = []
+            for b in beta:
+                if b == ['ε']:
+                    new_Ai_rhs.append([Aip])
+                else:
+                    new_Ai_rhs.append(list(b) + [Aip])
+            prods[Ai] = new_Ai_rhs
+            # Aip -> alpha Aip | ε
+            prods[Aip] = []
+            for a in alpha:
+                prods[Aip].append(list(a) + [Aip])
+            prods[Aip].append(['ε'])
+            # also record the new nonterminal in order list so subsequent iterations can use it
+            nonterminals.insert(i+1, Aip)
+
+    return prods, steps
+
+
+def left_factor(productions):
+    """Apply left factoring to the grammar. Returns (new_productions, steps).
+
+    This does a simple factoring: when a non-terminal has two or more
+    alternatives that share a common prefix (at least the first symbol),
+    it pulls the common prefix into a new non-terminal.
+    """
+    prods = {nt: [list(p) for p in rhs] for nt, rhs in productions.items()}
+    steps = []
+
+    def make_new_nt(base):
+        candidate = base + "'"
+        while candidate in prods:
+            candidate += "'"
+        return candidate
+
+    changed = True
+    while changed:
+        changed = False
+        for A, alternatives in list(prods.items()):
+            if len(alternatives) < 2:
+                continue
+            # group by first symbol
+            groups = {}
+            for prod in alternatives:
+                key = prod[0] if prod else 'ε'
+                groups.setdefault(key, []).append(prod)
+
+            for key, group in groups.items():
+                if len(group) < 2:
+                    continue
+                # find longest common prefix among these prods
+                prefix = []
+                for symbols in zip(*group):
+                    if all(sym == symbols[0] for sym in symbols):
+                        prefix.append(symbols[0])
+                    else:
+                        break
+                if not prefix:
+                    continue
+                # create new non-terminal
+                A_dash = make_new_nt(A)
+                steps.append(f"Left factoring on {A}: common prefix {' '.join(prefix)} found; created {A_dash}.")
+                # build new alternatives
+                new_A_alts = []
+                for prod in alternatives:
+                    if prod[:len(prefix)] == prefix:
+                        # moved under A_dash
+                        suffix = prod[len(prefix):]
+                        if not suffix:
+                            prods.setdefault(A_dash, []).append(['ε'])
+                        else:
+                            prods.setdefault(A_dash, []).append(suffix)
+                    else:
+                        new_A_alts.append(prod)
+                # A -> prefix A_dash | other_alts
+                new_A_alts.append(list(prefix) + [A_dash])
+                prods[A] = new_A_alts
+                changed = True
+                break
+            if changed:
+                break
+
+    return prods, steps
+
+
+
 def read_ops_file(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -268,7 +413,41 @@ def main(argv=None):
         print('No input string provided (use --input-string or provide Input: in grammar file).')
         sys.exit(1)
 
-    # Compute FIRST sets (use iterative algorithm to handle left-recursion)
+    # Show original grammar
+    print(f"Using grammar from: {args.grammar}")
+    print(f"Start symbol: {start_symbol}")
+    print("Original grammar:\n")
+    print(format_productions(productions))
+    print('\n')
+
+    # Remove left recursion and show steps
+    productions_lr_removed, lr_steps = remove_left_recursion(productions)
+    if lr_steps:
+        print("--- Left Recursion Removal Steps ---")
+        for s in lr_steps:
+            print("-", s)
+        print('\nGrammar after left recursion removal:\n')
+        print(format_productions(productions_lr_removed))
+        print('\n')
+    else:
+        print("No left recursion detected.\n")
+
+    # Apply left factoring and show steps
+    productions_factored, lf_steps = left_factor(productions_lr_removed)
+    if lf_steps:
+        print("--- Left Factoring Steps ---")
+        for s in lf_steps:
+            print("-", s)
+        print('\nGrammar after left factoring:\n')
+        print(format_productions(productions_factored))
+        print('\n')
+    else:
+        print("No left factoring needed.\n")
+
+    # Use the transformed grammar from here on
+    productions = productions_factored
+
+    # Compute FIRST sets (use iterative algorithm)
     first = compute_all_firsts(productions)
 
     # Compute FOLLOW sets
@@ -279,8 +458,6 @@ def main(argv=None):
     # Construct Parsing Table
     table = construct_table(productions, first, follow)
 
-    print(f"Using grammar from: {args.grammar}")
-    print(f"Start symbol: {start_symbol}")
     print(f"Input: {input_string}\n")
 
     # Run parser
