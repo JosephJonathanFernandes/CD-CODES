@@ -1,4 +1,5 @@
 # Predictive Parser Implementation in Python
+PROD_ARROW = '⇒'  # arrow used when printing productions
 
 # Function to compute FIRST sets
 def compute_first(symbol, productions, first):
@@ -35,38 +36,43 @@ def compute_all_firsts(productions):
         changed = False
         for head, prods in productions.items():
             for prod in prods:
+                # epsilon production
                 if len(prod) == 1 and prod[0] == 'ε':
                     if 'ε' not in first[head]:
                         first[head].add('ε')
                         changed = True
                     continue
-                # iterate symbols in the production
-                add_eps = True
-                for s in prod:
-                    if s in productions:
-                        # non-terminal
-                        before = len(first[head])
-                        first[head] |= (first[s] - {'ε'})
-                        if 'ε' in first[s]:
-                            # continue to next symbol
-                            pass
-                        else:
-                            add_eps = False
-                            break
-                        if len(first[head]) != before:
-                            changed = True
-                    else:
+
+                # walk symbols in RHS
+                all_eps = True
+                for sym in prod:
+                    if sym not in productions:
                         # terminal
-                        if s not in first[head]:
-                            first[head].add(s)
+                        if sym not in first[head]:
+                            first[head].add(sym)
                             changed = True
-                        add_eps = False
+                        all_eps = False
                         break
-                else:
-                    # all symbols can produce epsilon
+                    else:
+                        # non-terminal: add FIRST(sym) minus epsilon
+                        before = len(first[head])
+                        to_add = first[sym] - {'ε'}
+                        if to_add - first[head]:
+                            first[head] |= to_add
+                            changed = True
+                        if 'ε' in first[sym]:
+                            # sym can produce epsilon; continue to next symbol
+                            continue
+                        else:
+                            all_eps = False
+                            break
+
+                if all_eps:
+                    # all symbols can derive epsilon
                     if 'ε' not in first[head]:
                         first[head].add('ε')
                         changed = True
+
     return first
 
 # Function to compute FOLLOW sets
@@ -101,8 +107,11 @@ def compute_follow(symbol, productions, start_symbol, first, follow):
 # Function to construct predictive parsing table
 def construct_table(productions, first, follow):
     table = {}
+    origins = {}  # map (A, t) -> "A -> ..." string that added the entry
+    conflicts = []
     for head, prods in productions.items():
         for prod in prods:
+            prod_str = ' '.join(prod)
             first_set = set()
             if not (len(prod) == 1 and prod[0] == 'ε'):
                 for s in prod:
@@ -118,12 +127,77 @@ def construct_table(productions, first, follow):
                     first_set.add('ε')
             else:
                 first_set.add('ε')
+
             for terminal in first_set - {'ε'}:
-                table[(head, terminal)] = prod
+                key = (head, terminal)
+                if key in table and table[key] != prod:
+                    conflicts.append((head, terminal, table[key], origins.get(key, ''), prod, f"{head} {PROD_ARROW} {prod_str}"))
+                else:
+                    table[key] = prod
+                    origins[key] = f"{head} {PROD_ARROW} {prod_str}"
+
             if 'ε' in first_set:
                 for terminal in follow.get(head, set()):
-                    table[(head, terminal)] = prod
-    return table
+                    key = (head, terminal)
+                    if key in table and table[key] != prod:
+                        conflicts.append((head, terminal, table[key], origins.get(key, ''), prod, f"{head} {PROD_ARROW} {prod_str}"))
+                    else:
+                        table[key] = prod
+                        origins[key] = f"{head} {PROD_ARROW} {prod_str}"
+
+    return table, conflicts, origins
+
+
+def compute_all_follows(productions, start_symbol, first):
+    """Compute FOLLOW sets using an iterative fixpoint algorithm."""
+    follow = {nt: set() for nt in productions}
+    follow[start_symbol].add('$')
+    changed = True
+    while changed:
+        changed = False
+        for head, prods in productions.items():
+            for prod in prods:
+                for i, B in enumerate(prod):
+                    if B not in productions:
+                        continue
+                    # rest of symbols after B
+                    rest = prod[i+1:]
+                    # compute FIRST(rest)
+                    first_rest = set()
+                    if not rest:
+                        # add follow(head) to follow(B)
+                        before = len(follow[B])
+                        follow[B] |= follow[head]
+                        if len(follow[B]) != before:
+                            changed = True
+                    else:
+                        add_follow_head = True
+                        for sym in rest:
+                            if sym in first:
+                                before = len(follow[B])
+                                follow[B] |= (first[sym] - {'ε'})
+                                if len(follow[B]) != before:
+                                    changed = True
+                                if 'ε' in first[sym]:
+                                    # continue to next symbol
+                                    continue
+                                else:
+                                    add_follow_head = False
+                                    break
+                            else:
+                                # sym is terminal
+                                before = len(follow[B])
+                                follow[B].add(sym)
+                                if len(follow[B]) != before:
+                                    changed = True
+                                add_follow_head = False
+                                break
+                        if add_follow_head:
+                            before = len(follow[B])
+                            follow[B] |= follow[head]
+                            if len(follow[B]) != before:
+                                changed = True
+    return follow
 
 
 def terminals_from_productions(productions):
@@ -183,7 +257,7 @@ def print_parsing_table(productions, table):
         for A in nonterms:
             if (A, t) in table:
                 prod = table[(A, t)]
-                cell = f"{A}->{ ' '.join(pretty_sym(s) for s in prod)}"
+                cell = f"{A} {PROD_ARROW} {' '.join(pretty_sym(s) for s in prod)}"
                 max_cell = max(max_cell, len(cell))
         col_widths[t] = max_cell + 2
 
@@ -200,7 +274,7 @@ def print_parsing_table(productions, table):
             cell = ''
             if (A, t) in table:
                 prod = table[(A, t)]
-                cell = f"{A}->{ ' '.join(pretty_sym(s) for s in prod)}"
+                cell = f"{A} {PROD_ARROW} {' '.join(pretty_sym(s) for s in prod)}"
             row += f"{cell:<{col_widths[t]}}"
         print(row)
 
@@ -232,7 +306,7 @@ def predictive_parse(input_string, start_symbol, table):
             i += 1
         elif (top, current_input) in table:
             prod = table[(top, current_input)]
-            action = f"T[{top}][{current_input}] = {top}->{ ' '.join(pretty_sym(s) for s in prod)}"
+            action = f"T[{top}][{current_input}] = {top} {PROD_ARROW} {' '.join(pretty_sym(s) for s in prod)}"
             print(f"{buffer_str:<30}{stack_str:<30}{action}")
             # push RHS in reverse (unless epsilon)
             if not (len(prod) == 1 and prod[0] == 'ε'):
@@ -324,7 +398,7 @@ def format_productions(productions):
     lines = []
     for head, prods in productions.items():
         alts = [' '.join(p) for p in prods]
-        lines.append(f"{head} -> {' | '.join(alts)}")
+        lines.append(f"{head} {PROD_ARROW} {' | '.join(alts)}")
     return '\n'.join(lines)
 
 
@@ -347,7 +421,7 @@ def remove_left_recursion(productions):
         return candidate
 
     for i, Ai in enumerate(nonterminals):
-        # replace Ai -> Aj α where j < i
+        # replace Ai -> Aj α where j < i (indirect left recursion elimination)
         for j in range(i):
             Aj = nonterminals[j]
             new_rhs = []
@@ -359,11 +433,12 @@ def remove_left_recursion(productions):
                     for beta in prods[Aj]:
                         new_prod = list(beta) + rest
                         new_rhs.append(new_prod)
+                        steps.append(f"In {Ai}: replaced {Ai} {PROD_ARROW} {Aj} {' '.join(rest) if rest else ''} with {Ai} {PROD_ARROW} {' '.join(new_prod)} (expanding {Aj} {PROD_ARROW} {' '.join(beta)})")
                     changed = True
                 else:
                     new_rhs.append(prod)
             if changed:
-                steps.append(f"Replaced productions of {Ai} that started with {Aj} by expanding {Aj}'s productions")
+                steps.append(f"After expanding {Aj} in {Ai}, {Ai} productions become: {[' '.join(p) for p in new_rhs]}")
                 prods[Ai] = new_rhs
 
         # now remove direct left recursion for Ai
@@ -391,6 +466,8 @@ def remove_left_recursion(productions):
             for a in alpha:
                 prods[Aip].append(list(a) + [Aip])
             prods[Aip].append(['ε'])
+            steps.append(f"{Ai} rewritten as: {[' '.join(p) for p in prods[Ai]]}")
+            steps.append(f"{Aip} productions: {[' '.join(p) for p in prods[Aip]]}")
             # also record the new nonterminal in order list so subsequent iterations can use it
             nonterminals.insert(i+1, Aip)
 
@@ -506,6 +583,14 @@ def main(argv=None):
         print('No input string provided (use --input-string or provide Input: in grammar file).')
         sys.exit(1)
 
+    # Ensure stdout/stderr use UTF-8 so symbols like 'ε' print correctly on Windows
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        # older Python or streams that don't support reconfigure
+        pass
+
     # Show original grammar
     print(f"Using grammar from: {args.grammar}")
     print(f"Start symbol: {start_symbol}")
@@ -543,19 +628,26 @@ def main(argv=None):
     # Compute FIRST sets (use iterative algorithm)
     first = compute_all_firsts(productions)
 
-    # Compute FOLLOW sets
-    follow = {}
-    for symbol in productions:
-        follow = compute_follow(symbol, productions, start_symbol, first, follow)
+    # Compute FOLLOW sets (iterative)
+    follow = compute_all_follows(productions, start_symbol, first)
 
-    # Construct Parsing Table
-    table = construct_table(productions, first, follow)
+    # Construct Parsing Table and detect LL(1) conflicts
+    table, conflicts, origins = construct_table(productions, first, follow)
 
     # Print FIRST and FOLLOW nicely
     print_firsts_and_follows(productions, first, follow)
 
     # Print parsing table
     print_parsing_table(productions, table)
+    # Report LL(1) status
+    if conflicts:
+        print('\nGrammar is NOT LL(1). Conflicts found in parsing table:')
+        for (A, t, existing_prod, existing_origin, new_prod, new_origin) in conflicts:
+            existing_str = existing_origin or (' '.join(existing_prod))
+            new_str = new_origin or (' '.join(new_prod))
+            print(f"- Conflict at T[{A}][{t}]: existing -> {existing_str}, new -> {new_str}")
+    else:
+        print('\nGrammar appears to be LL(1) (no table conflicts detected).')
 
     print(f"\nInput: {input_string}\n")
 

@@ -1,0 +1,7 @@
+# Factor/left-recursion example (based on your sample)
+Start: S
+S -> A k O
+A -> A d | a B | a C
+B -> b B C | r
+C -> c
+Input: a r k O

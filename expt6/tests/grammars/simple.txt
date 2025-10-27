@@ -1,0 +1,4 @@
+# Simple grammar (no transformations required)
+Start: S
+S -> a b | c
+Input: a b

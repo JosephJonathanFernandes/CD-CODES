@@ -1,0 +1,5 @@
+# Indirect left recursion example
+Start: S
+S -> A a | b
+A -> S d | c
+Input: b a

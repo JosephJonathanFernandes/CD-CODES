@@ -1,0 +1,6 @@
+# Classic expression grammar (direct left recursion)
+Start: E
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id
+Input: id + id * id

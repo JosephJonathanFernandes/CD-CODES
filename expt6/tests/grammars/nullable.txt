@@ -1,0 +1,5 @@
+# Grammar with epsilon/nullable production
+Start: S
+S -> A b | c
+A -> ε | a
+Input: a b
