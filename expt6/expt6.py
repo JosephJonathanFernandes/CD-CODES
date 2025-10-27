@@ -140,50 +140,68 @@ def terminals_from_productions(productions):
 
 
 def pretty_sym(sym):
-    return '#' if sym == 'ε' else sym
+    # Print symbols as-is; epsilon remains the character 'ε'
+    return sym
 
 
 def print_firsts_and_follows(productions, first, follow):
     nonterms = list(productions.keys())
     print('\nCalculated firsts:')
     for nt in nonterms:
-        print(f"first({nt}) => {sorted(first.get(nt, set()))}")
+        print(f"first({nt}) => {{{', '.join(sorted(first.get(nt, set())) )}}}")
 
     print('\nCalculated follows:')
     for nt in nonterms:
-        print(f"follow({nt}) => {sorted(follow.get(nt, set()))}")
+        print(f"follow({nt}) => {{{', '.join(sorted(follow.get(nt, set())) )}}}")
 
     # Nicely formatted table
     print('\nFirsts and Follow Result table\n')
+    # prepare column widths
+    col1 = max(6, max(len(nt) for nt in nonterms)) + 2
+    col2 = max(10, max(len(str(sorted(first.get(nt, set())))) for nt in nonterms) ) + 4
+    col3 = max(10, max(len(str(sorted(follow.get(nt, set())))) for nt in nonterms) ) + 4
     # header
-    print(f"{'Non-T':<10}{'FIRST':<22}{'FOLLOW':<22}")
+    print(f"{ 'Non-T':<{col1}}{ 'FIRST':<{col2}}{ 'FOLLOW':<{col3}}")
     for nt in nonterms:
-        fset = set(first.get(nt, set()))
-        foset = set(follow.get(nt, set()))
-        print(f"{nt:<10}{str(sorted(fset)):<22}{str(sorted(foset)):<22}")
+        fset = sorted(first.get(nt, set()))
+        foset = sorted(follow.get(nt, set()))
+        print(f"{nt:<{col1}}{str(fset):<{col2}}{str(foset):<{col3}}")
 
 
 def print_parsing_table(productions, table):
     nonterms = list(productions.keys())
     terms = terminals_from_productions(productions)
-    # include $ and ensure unique
+    # include $ and ensure unique & keep order
     if '$' not in terms:
-        terms.append('$')
-    # header
-    col_width = 15
-    header = f"{'':<10}"
+        terms = terms + ['$']
+    # compute column widths based on content
+    col_widths = {}
+    # header widths
+    col_widths['nonterm'] = max(6, max(len(nt) for nt in nonterms)) + 2
     for t in terms:
-        header += f"{t:<{col_width}}"
+        max_cell = len(t)
+        for A in nonterms:
+            if (A, t) in table:
+                prod = table[(A, t)]
+                cell = f"{A}->{ ' '.join(pretty_sym(s) for s in prod)}"
+                max_cell = max(max_cell, len(cell))
+        col_widths[t] = max_cell + 2
+
+    # print header
+    header = f"{'' :<{col_widths['nonterm']}}"
+    for t in terms:
+        header += f"{t:<{col_widths[t]}}"
     print('\nGenerated parsing table:\n')
     print(header)
+    # print rows
     for A in nonterms:
-        row = f"{A:<10}"
+        row = f"{A:<{col_widths['nonterm']}}"
         for t in terms:
             cell = ''
             if (A, t) in table:
                 prod = table[(A, t)]
                 cell = f"{A}->{ ' '.join(pretty_sym(s) for s in prod)}"
-            row += f"{cell:<{col_width}}"
+            row += f"{cell:<{col_widths[t]}}"
         print(row)
 
 
@@ -199,8 +217,9 @@ def predictive_parse(input_string, start_symbol, table):
     print(f"{'Buffer':<30}{'Stack':<30}{'Action'}")
     while True:
         buffer_str = ' '.join(tokens[i:])
-        stack_str = ' '.join(stack)
-        # determine action
+        # display stack with top on the left (reverse of internal list)
+        stack_str = ' '.join(reversed(stack))
+        # peek top
         top = stack.pop() if stack else None
         current_input = tokens[i] if i < len(tokens) else '$'
         action = ''
@@ -219,12 +238,14 @@ def predictive_parse(input_string, start_symbol, table):
             if not (len(prod) == 1 and prod[0] == 'ε'):
                 for symbol in reversed(prod):
                     stack.append(symbol)
+            # after pushing, show updated stack state
+            new_stack_str = ' '.join(reversed(stack))
+            print(f"{buffer_str:<30}{new_stack_str:<30}{''}")
         else:
             action = 'Error: no rule'
             print(f"{buffer_str:<30}{stack_str:<30}{action}")
             return False
 
-        # continue loop
 
 
 def tokenize(s):

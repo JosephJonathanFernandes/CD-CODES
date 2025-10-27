@@ -27,14 +27,46 @@ S' -> a S' | ε
 A' -> b | c
 
 
+
+Calculated firsts:
+first(S) => {b}
+first(A) => {a}
+first(S') => {a, ε}
+first(A') => {b, c}
+
+Calculated follows:
+follow(S) => {$}
+follow(A) => {}
+follow(S') => {$}
+follow(A') => {}
+
+Firsts and Follow Result table
+
+Non-T   FIRST         FOLLOW
+S       ['b']         ['$']
+A       ['a']         []
+S'      ['a', 'ε']    ['$']
+A'      ['b', 'c']    []
+
+Generated parsing table:
+
+        a         b        c      $
+S                 S->b S'
+A       A->a A'
+S'      S'->a S'                  S'->ε
+A'                A'->b    A'->c
+
 Input: b a
 
-Stack                         Input                         Action
-$S                            b a $                         Output S -> b S'
-$S'b                          b a $                         Match b
-$S'                           a $                           Output S' -> a S'
-$S'a                          a $                           Match a
-$S'                           $                             Output S' -> ε
+Buffer                        Stack                         Action
+b a $                         S $                           T[S][b] = S->b S'
+b a $                         b S' $
+b a $                         b S' $                        Matched:b
+a $                           S' $                          T[S'][a] = S'->a S'
+a $                           a S' $
+a $                           a S' $                        Matched:a
+$                             S' $                          T[S'][$] = S'->ε
+$                             $
 $                             $                             Accept
 
 Parse result: Accepted
