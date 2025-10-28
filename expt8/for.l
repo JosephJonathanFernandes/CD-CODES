@@ -8,10 +8,26 @@
 extern int yylineno;
 %}
 
+
 %%
 "for"               { return FOR; }
 "while"            { return WHILE; }
 "do"               { return DO; }
+"###"              { return SEP; }
+"//"[^\n]*         { /* skip single-line comment */ }
+"/*"                {
+	/* skip C-style comment manually so we can count newlines */
+	int c;
+	while ((c = input()) != 0) {
+		if (c == '\n') ++yylineno;
+		if (c == '*') {
+			int d = input();
+			if (d == '/') break;
+			if (d == 0) break;
+			unput(d);
+		}
+	}
+}
 "int"              { yylval.s = strdup(yytext); return TYPE; }
 "++"                { return INC; }
 "--"                { return DEC; }

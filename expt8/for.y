@@ -6,6 +6,7 @@
 extern int yylex(void);
 extern int yylineno;
 void yyerror(const char *s);
+int had_error = 0; /* flag for current program */
 %}
 
 %union {
@@ -17,6 +18,7 @@ void yyerror(const char *s);
 %token LE GE EQ NE
 %token FOR WHILE DO
 %token TYPE
+%token SEP
 
 %left '+' '-'
 %left '*' '/'
@@ -26,8 +28,15 @@ void yyerror(const char *s);
 
 %%
 
+program_list:
+    /* empty */
+  | program_list program
+  ;
+
 program:
-    stmt_list
+    stmt_list SEP   { if (!had_error) printf("Program: syntactically correct.\n"); else printf("Program: has syntax errors.\n"); had_error = 0; }
+  | stmt_list      { /* last program may not have trailing SEP */ if (!had_error) printf("Program: syntactically correct.\n"); else printf("Program: has syntax errors.\n"); had_error = 0; }
+  | error SEP      { printf("Program: has syntax errors.\n"); yyclearin; had_error = 0; }
   ;
 
 stmt_list:
@@ -101,15 +110,12 @@ for_inc:
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Syntax error at line %d: %s\n", yylineno, s);
+  fprintf(stderr, "Syntax error at line %d: %s\n", yylineno, s);
+  had_error = 1;
 }
 
 int main(void) {
-    if (yyparse() == 0) {
-        printf("Input is syntactically correct.\n");
-        return 0;
-    } else {
-        printf("Input has syntax errors.\n");
-        return 1;
-    }
+  /* parse input and rely on per-program messages; return 0 */
+  yyparse();
+  return 0;
 }
