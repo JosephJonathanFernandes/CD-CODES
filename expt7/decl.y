@@ -6,7 +6,7 @@ void yyerror(const char *s);
 %}
 
 %token VOID CHAR SHORT INT LONG FLOAT DOUBLE SIGNED UNSIGNED
-%token ID NUMBER COMMA SEMICOLON ASSIGN ASTERISK LBRACKET RBRACKET INVALID
+%token ID NUMBER FLOATCONST CHARCONST COMMA SEMICOLON ASSIGN ASTERISK LBRACKET RBRACKET INVALID
 
 %%
 
@@ -78,6 +78,8 @@ const_number_opt
 /* keep initializer simple (constants or identifiers) */
 initializer
     : NUMBER
+    | FLOATCONST
+    | CHARCONST
     | ID
     ;
 

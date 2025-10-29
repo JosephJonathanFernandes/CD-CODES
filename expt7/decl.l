@@ -27,7 +27,11 @@ int yywrap(void){ return 1; }
 "["             { return LBRACKET; }
 "]"             { return RBRACKET; }
 
-[0-9]+           { return NUMBER; }
+[0-9]+\.[0-9]+                     { return FLOATCONST; }
+
+[0-9]+                              { return NUMBER; }
+
+'[^\\\n]'                         { return CHARCONST; }
 
 [ \t\n\r]+     { /* skip whitespace */ }
 .               { return INVALID; }
