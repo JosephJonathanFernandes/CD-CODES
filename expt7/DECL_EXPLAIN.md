@@ -1,18 +1,30 @@
-# Declaration Validator (`decl.y`) and Lexer (`decl.l`) — Explained
+# Declaration Validator (`decl.y`) and Lexer (`decl.l`)
 
-This example validates very simple C-like declarations of the form `int a, b, c;`. It prints `Valid declaration` on success; otherwise `Invalid declaration`.
+This validates C-like declaration statements and now supports many types and forms, not just `int`.
 
 ---
 
 ## What it does
 
-- Accepts exactly: the keyword `int`, followed by one or more identifiers separated by commas, and a terminating semicolon.
-- Any deviation (missing comma, missing semicolon, unknown keyword, stray character) is considered invalid.
+- Accepts one or more type specifiers: `void`, `char`, `short`, `int`, `long`, `float`, `double`, `signed`, `unsigned` in any reasonable combination (e.g., `unsigned long long int`).
+- Accepts one or more declarators separated by commas, terminated by a semicolon `;`.
+- Declarators can be:
+  - Plain identifiers: `x`
+  - Pointers: `*p`, `**q`
+  - Arrays: `a[10]`, `m[3][4]` (size is an integer constant or can be left empty)
+  - With simple initializer: `= <number or identifier>` (semantic type checking is not enforced)
+  - Combinations: `int *p, a[10], **q = 0;`
 
-Example
+Examples
 ```text
-Input:  int a, b, c;
-Output: Valid declaration
+int a, b, c;                 -> Valid declaration
+float x = 3, y;              -> Valid declaration
+unsigned long long **pp;     -> Valid declaration
+char buf[256];               -> Valid declaration
+double m[3][4], *p = 0;      -> Valid declaration
+void *ptr;                   -> Valid declaration
+int a, ;                     -> Invalid declaration (trailing comma)
+short [10] a;                -> Invalid declaration (missing identifier before [)
 ```
 
 ---
@@ -27,43 +39,22 @@ Output: Valid declaration
 
 ## Inside the lexer: `decl.l`
 
-Keyword vs identifier
-```flex
-[a-zA-Z][a-zA-Z0-9]* { if (strcmp(yytext, "int") == 0) return INT; else return ID; }
-","                  { return COMMA; }
-";"                  { return SEMICOLON; }
-[ \t\n]+              ;       // skip whitespace
-.                    { return INVALID; }
-int yywrap(void){ return 1; }
-```
-- The rule for identifiers checks if the lexeme equals `"int"`; if so, returns `INT`, otherwise `ID`.
-- Any other single character is marked `INVALID`, which will not fit the grammar and thus cause an error.
+Highlights
+- Recognizes keywords: `void`, `char`, `short`, `int`, `long`, `float`, `double`, `signed`, `unsigned`.
+- Tokens for punctuation: `, ; = * [ ]`.
+- Numbers: simple integer constants (`NUMBER`).
+- Identifiers: `ID`.
+- Whitespace is skipped.
 
 ---
 
 ## Inside the parser: `decl.y`
 
-Header contracts
-```c
-int yylex(void);
-void yyerror(const char *s);
-```
-
-Tokens
-```bison
-%token INT ID COMMA SEMICOLON INVALID
-```
-
-Grammar and actions
-```bison
-decl    : INT varlist SEMICOLON   { printf("Valid declaration\n"); } ;
-
-varlist : ID
-        | varlist COMMA ID
-        ;
-```
-- Accepts one or more identifiers separated by commas, after the `INT` keyword, then a `SEMICOLON`.
-- Any `INVALID` token or wrong sequence triggers a parse error → `yyerror("...")`.
+Key nonterminals
+- `type_specifier`: sequence of type tokens.
+- `declarator`: optional `*` chain + identifier + optional array dimensions.
+- `init_declarator`: `declarator` with optional `= initializer`.
+- `initializer`: simplified to `NUMBER` or `ID`.
 
 Error handling
 ```c
@@ -76,29 +67,37 @@ void yyerror(const char *s) { printf("Invalid declaration\n"); }
 
 - Valid
   - `int a;`
-  - `int a, b, c;`
+  - `float x = 1;`
+  - `unsigned long long **pp;`
+  - `char s[100];`
 - Invalid
   - `int , a;`      (comma without preceding ID)
   - `int a b;`      (missing comma)
-  - `float a;`      (only `int` is recognized as a keyword)
+  - `short [10] a;` (missing identifier before bracket)
   - `int a, ;`      (trailing comma)
 
 ---
 
-## Build and run (PowerShell)
+## Build and run (PowerShell on Windows)
 
 ```powershell
+# Generate parser and lexer
 bison -d decl.y
 flex decl.l
+
+# Compile (requires MinGW-w64 gcc or similar on PATH)
 gcc lex.yy.c decl.tab.c -o decl.exe
-.\decl.exe
-# Example
-# echo "int a, b, c;" | .\decl.exe
+
+# Run
+./decl.exe
+# Or pipe input
+"unsigned long long **pp;" | ./decl.exe
 ```
 
 Notes
 - Whitespace is ignored by the lexer.
 - No `-lfl` link is needed because `yywrap()` is defined.
+- If you don't have gcc on Windows, install MSYS2/MinGW or compile with another C compiler.
 
 ---
 
