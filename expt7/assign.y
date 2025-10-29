@@ -26,8 +26,9 @@ void yyerror(const char *s);
 %type <fval> expr
 
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
 %right UMINUS
+%right '^'
 
 %%
 
@@ -53,7 +54,9 @@ expr:
             expr '+' expr    { $$ = $1 + $3; }
         | expr '-' expr    { $$ = $1 - $3; }
         | expr '*' expr    { $$ = $1 * $3; }
-        | expr '/' expr    { if (fabs($3) < 1e-12) { yyerror("division by zero"); $$ = 0.0; } else $$ = $1 / $3; }
+    | expr '/' expr    { if (fabs($3) < 1e-12) { yyerror("division by zero"); $$ = 0.0; } else $$ = $1 / $3; }
+    | expr '%' expr    { if (fabs($3) < 1e-12) { yyerror("modulo by zero"); $$ = 0.0; } else $$ = fmod($1, $3); }
+    | expr '^' expr    { $$ = pow($1, $3); }
         | '-' expr %prec UMINUS { $$ = -$2; }
         | '(' expr ')'     { $$ = $2; }
         | NUM              { $$ = (double)$1; }

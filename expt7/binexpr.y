@@ -32,6 +32,8 @@ line:
     | NUM '-' NUM '\n'    { double r = $1 - $3; printf("Parsed: "); print_num($1); printf(" - "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
     | NUM '*' NUM '\n'    { double r = $1 * $3; printf("Parsed: "); print_num($1); printf(" * "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
     | NUM '/' NUM '\n'    { if($3==0.0) { printf("Error: division by zero\n"); } else { double r = $1 / $3; printf("Parsed: "); print_num($1); printf(" / "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); } }
+  | NUM '%' NUM '\n'    { if($3==0.0) { printf("Error: modulo by zero\n"); } else { double r = fmod($1, $3); printf("Parsed: "); print_num($1); printf(" %% "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); } }
+    | NUM '^' NUM '\n'    { double r = pow($1, $3); printf("Parsed: "); print_num($1); printf(" ^ "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
     ;
 
 %%
