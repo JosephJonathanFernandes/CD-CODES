@@ -21,6 +21,8 @@ int yywrap(void) { return 1; }
 "-"        { return '-'; }
 "*"        { return '*'; }
 "/"        { return '/'; }
+"%"        { return '%'; }
+"^"        { return '^'; }
 "="        { return '='; }
 "("        { return '('; }
 ")"        { return ')'; }

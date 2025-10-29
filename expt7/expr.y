@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 int yylex(void);
 void yyerror(const char *s);
@@ -39,8 +40,9 @@ int lookup(const char* name) {
 %token <sym> ID
 %token INC DEC
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
 %right UMINUS
+%right '^'
 
 %type <d> expr
 
@@ -62,6 +64,8 @@ expr:
         | expr '-' expr    { $$ = $1 - $3; }
         | expr '*' expr    { $$ = $1 * $3; }
         | expr '/' expr    { if ($3 == 0.0) { yyerror("division by zero"); $$ = 0.0; } else $$ = $1 / $3; }
+        | expr '%' expr    { if ($3 == 0.0) { yyerror("modulo by zero"); $$ = 0.0; } else $$ = fmod($1, $3); }
+        | expr '^' expr    { $$ = pow($1, $3); }
         | '-' expr %prec UMINUS { $$ = -$2; }
         | '(' expr ')'     { $$ = $2; }
         | NUM              { $$ = $1; }
