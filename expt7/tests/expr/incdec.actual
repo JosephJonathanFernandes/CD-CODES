@@ -1,4 +1,6 @@
 Enter expression (press Ctrl+Z then Enter to quit on Windows)
-Result = -1
-Result = -6
-Result = -7
+x = 5
+Result = 4
+Result = 4
+Result = 4
+Result = 4
