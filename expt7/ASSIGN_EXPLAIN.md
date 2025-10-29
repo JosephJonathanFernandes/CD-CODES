@@ -1,13 +1,13 @@
 # Assignment Parser (`assign.y`) and Lexer (`assign.l`) — Explained
 
-Updated: Supports multi-type assignments (int, float, char, string, boolean) and evaluates numeric expressions. This page explains what it parses, how it’s implemented, and exactly how to build/run it on Windows (PowerShell).
+Updated: Supports multi-type assignments (int, float, char, string, boolean) and evaluates numeric expressions with modulo (%) and exponentiation (^). This page explains what it parses, how it’s implemented, and exactly how to build/run it on Windows (PowerShell).
 
 ---
 
 ## What it does
 
 - Parses `ID = <rhs> ;` where `<rhs>` can be:
-     - Numeric expression over ints and floats: `+ - * / ( )` and unary minus
+     - Numeric expression over ints and floats: `+ - * / % ^ ( )` and unary minus
      - Character literal: `'A'` (simple form)
      - String literal: `"hello"` (with common escapes handled)
      - Boolean literal: `true` | `false`
@@ -49,8 +49,9 @@ Key grammar (accurate to source):
 
 %type <fval> expr
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
 %right UMINUS
+%right '^'
 
 stmt:
                ID ASSIGN expr     SEMICOLON  { /* prints as int if integral */ }
@@ -65,6 +66,8 @@ expr:
           | expr '-' expr
           | expr '*' expr
           | expr '/' expr      /* guarded div-by-zero (prints error, yields 0) */
+          | expr '%' expr      /* guarded mod-by-zero (prints error, yields 0) via fmod */
+          | expr '^' expr      /* exponentiation via pow, right-assoc precedence */
           | '-' expr %prec UMINUS
           | '(' expr ')'
           | NUM                /* cast to double */
@@ -113,6 +116,8 @@ ok = true;         → ok = true
 ```
 
 Division-by-zero: `z = 7 / 0;` → prints `Error: division by zero` then `z = 0`.
+Modulo-by-zero: `z = 5 % 0;` → prints `Error: modulo by zero` then `z = 0`.
+Exponentiation: `y = 2 ^ 3 ^ 2;` → `y = 512` (right-associative).
 
 ---
 

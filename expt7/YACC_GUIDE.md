@@ -193,8 +193,11 @@ Semantic values:
 ## Patterns illustrated by this repo
 
 - Arithmetic with precedence and unary minus (`expr.y`, `assign.y`) using `%left/%right` and `%prec UMINUS`.
+- Right-associative exponentiation with `%right '^'` and `pow()` in actions.
+- Modulo for doubles using `fmod()` with explicit zero checks (division/modulo-by-zero handling).
 - Keyword vs identifier in lexer using string compare (`decl.l`: returns `INT` when `yytext=="int"`, else `ID`).
 - Strict line-based patterns (`binexpr.y` requires `NUM op NUM` followed by `\n`).
+- Using `%union` to carry multiple semantic types (e.g., `double` and symbol indices) and typed tokens (`<d>`, `<sym>`).
 - Printing semantic results in actions (e.g., `printf("Result = %d\n", $1);`).
 
 ---

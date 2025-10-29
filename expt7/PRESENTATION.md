@@ -1,13 +1,13 @@
 # Lab Session 7 — YACC/Flex Mini-Experiments
 
-Date: October 29, 2025
+Date: October 30, 2025
 
 This folder contains four small, focused examples using Flex (lexer) and Bison/Yacc (parser). They demonstrate tokenization, grammar/precedence, and simple semantic actions.
 
-- `expr.l` / `expr.y` — Expression evaluator with precedence and unary minus
+- `expr.l` / `expr.y` — Expression evaluator with precedence, unary minus, floating-point, variables + assignment, ++/-- on identifiers, %, ^
 - `decl.l` / `decl.y` — C-like declaration validator: `int a, b, c;`
-- `binexpr.l` / `binexpr.y` — Strict two-operand expressions per line: `num op num`
-- `assign.l` / `assign.y` — Assignment with expression on RHS: `x = 3 * (2 + 1);`
+- `binexpr.l` / `binexpr.y` — Strict two-operand expressions per line: `num op num` (supports + - * / % ^)
+- `assign.l` / `assign.y` — Assignment with expression on RHS (supports + - * / % ^ and unary minus): `x = 3 * (2 + 1);`
 
 ---
 
@@ -28,6 +28,10 @@ gcc lex.yy.c expr.tab.c -o expr.exe
 .\expr.exe
 # Example
 # echo "3 + 4 * 5" | .\expr.exe
+# echo "1/2" | .\expr.exe
+# echo "x = 5`n--x" | .\expr.exe
+# echo "2 ^ 3 ^ 2" | .\expr.exe
+# echo "5.5 % 2" | .\expr.exe
 ```
 
 ### Declaration validator (`decl.*`)
@@ -50,6 +54,8 @@ gcc lex.yy.c binexpr.tab.c -o binexpr.exe
 .\binexpr.exe
 # Example
 # echo "12 + 5" | .\binexpr.exe
+# echo "5 % 2" | .\binexpr.exe
+# echo "2 ^ 3" | .\binexpr.exe
 ```
 
 ### Assignment parser (`assign.*`)
@@ -61,6 +67,8 @@ gcc lex.yy.c assign.tab.c -o assign.exe
 .\assign.exe
 # Example
 # echo "x = 3 * (2 + 1);" | .\assign.exe
+# echo "y = 2 ^ 3;" | .\assign.exe
+# echo "z = 5 % 2;" | .\assign.exe
 ```
 
 ---
@@ -68,17 +76,18 @@ gcc lex.yy.c assign.tab.c -o assign.exe
 ## 1) `expr.l` / `expr.y` — Full expression evaluator
 
 Purpose
-- Parse and evaluate arithmetic expressions with correct precedence and unary minus, printing a result per line.
+- Parse and evaluate arithmetic expressions with correct precedence and unary minus, printing a result per line. Supports floats, variables/assignment, ++/-- on identifiers, %, ^.
 
 Lexer highlights (`expr.l`)
-- Tokens: `NUM` (integers), literal operators `+ - * /`, parentheses `(` `)`, newline `\n`.
+- Tokens: `NUM` (floats/ints), `ID`, `INC`/`DEC` for ++/--, operators `+ - * / % ^`, parentheses, newline.
 - Whitespace `[ \t]+` is ignored.
 
 Grammar and precedence (`expr.y`)
 - Precedence and associativity:
-  - `%left '+' '-'` (lower)
-  - `%left '*' '/'` (higher)
-  - `%right UMINUS` (highest among these)
+  - `%left '+' '-'`
+  - `%left '*' '/' '%'`
+  - `%right UMINUS`
+  - `%right '^'` (right-associative power)
 - Core rules:
 ```
 input → input line | ε
@@ -96,7 +105,7 @@ Behavior and examples
 - `3 + 4 * 5` → `Result = 23` (multiplication before addition)
 - `-3 + 2` → `Result = -1`
 - `(3 + 4) * 5` → `Result = 35`
-- `7 / 0` → `Error: division by zero` (returned value 0)
+- `7 / 0` → `Error: division by zero` (no Result line printed)
 
 Key point to mention
 - `%prec UMINUS` disambiguates unary minus vs binary minus and gives it the correct precedence.
@@ -136,15 +145,17 @@ Purpose
 - Enforce exactly `NUM op NUM` per input line; print the parsed form and result.
 
 Lexer highlights (`binexpr.l`)
-- Tokens: `NUM`, literal `+ - * /`, newline. Whitespace is ignored.
+- Tokens: `NUM`, literal `+ - * / % ^`, newline. Whitespace is ignored.
 
 Grammar (`binexpr.y`)
 ```
 input → input line | ε
 line  → NUM '+' NUM '\n' { print }
-      | NUM '-' NUM '\n' { print }
-      | NUM '*' NUM '\n' { print }
-      | NUM '/' NUM '\n' { check div-by-zero }
+  | NUM '-' NUM '\n' { print }
+  | NUM '*' NUM '\n' { print }
+  | NUM '/' NUM '\n' { check div-by-zero }
+  | NUM '%' NUM '\n' { check mod-by-zero }
+  | NUM '^' NUM '\n' { print pow }
 ```
 
 Behavior and examples
@@ -162,13 +173,13 @@ Purpose
 - Parse `ID = <expr>;` and print the computed value: e.g., `x = 9`.
 
 Lexer highlights (`assign.l`)
-- Tokens: `ID`, `NUM`, `ASSIGN` (`=`), `SEMICOLON`, operators and parentheses.
+- Tokens: `ID`, `NUM`, `FLOAT`, `ASSIGN` (`=`), `SEMICOLON`, operators `+ - * / % ^` and parentheses.
 - When matching an `ID`, the lexer saves the lexeme into a global `char id_name[64]` so the parser can print it later.
 
 Grammar and precedence (`assign.y`)
 ```
-stmt → ID ASSIGN expr SEMICOLON   { printf("%s = %d\n", id_name, $3); }
-expr → same operator rules as expr.y, with %left/%right and UMINUS
+stmt → ID ASSIGN expr SEMICOLON   { prints as integer if integral, else %g }
+expr → + - * / % ^ with precedence; unary minus; NUM and FLOAT literals
 ```
 
 Behavior and examples
@@ -235,6 +246,6 @@ Key point to mention
 - `expr`: full evaluator with precedence, unary minus, division-by-zero check
 - `decl`: validates `int` declarations with a comma-separated list
 - `binexpr`: exactly `NUM op NUM` per line; newline terminates
-- `assign`: `ID = expr;` — prints computed value; no symbol table yet
+- `assign`: `ID = expr;` — prints computed value; no symbol table yet; supports % and ^; on div/mod-by-zero assigns 0
 
 That’s all you need to explain and demo the lab clearly.

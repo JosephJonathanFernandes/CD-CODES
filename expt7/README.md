@@ -3,10 +3,15 @@ Lab Session 7 — YACC/Lex examples
 This folder contains multiple small YACC (Bison) + Flex examples for learning syntax and semantic analysis.
 
 Files provided:
-- expr.l / expr.y — full expression evaluator (supports multi-operator expressions, precedence, unary minus)
+- expr.l / expr.y — full expression evaluator (multi-operator expressions, precedence, unary minus) with:
+	- floating-point numbers (and integers)
+	- variables and simple assignment (name = expr)
+	- prefix/postfix ++/-- on identifiers
+	- exponentiation (^) and modulo (%)
+	- division/modulo by zero reported as errors; no Result printed for that line
 - decl.l / decl.y — validate C-like declaration statements (e.g., "int a, b, c;")
-- binexpr.l / binexpr.y — strict two-operand expressions in form: num1 op num2 (supports ints/floats, signs, scientific notation; ops: + - * /)
-- assign.l / assign.y — parse and evaluate assignment statements like: x = 3 * (2 + 1);
+- binexpr.l / binexpr.y — strict two-operand expressions: num op num (ints/floats, signs, scientific notation; ops: + - * / % ^)
+- assign.l / assign.y — parse and evaluate assignment statements like: x = 3 * (2 + 1); now also supports % and ^ on the RHS
 
 How to build (PowerShell, MinGW/msys or WSL):
 
@@ -48,8 +53,13 @@ Notes:
 
 Sample inputs:
 - decl:  int a, b, c;
-- binexpr: 12 + 5, 12.5 * 2, -3 - -4.5, +1e2 / 4e1
-- expr: 3 + 4 * 5
-- assign: x = 3 * (2 + 1);
+- binexpr: 12 + 5, 12.5 * 2, -3 - -4.5, +1e2 / 4e1, 5 % 2, 2 ^ 3
+- expr: 3 + 4 * 5, 1/2, 10.0/4, x = 5, --x, x++, 2^3^2, 5.5 % 2
+- assign: x = 3 * (2 + 1); y = 2 ^ 3; z = 5 % 2;
+
+Notes on behavior:
+- expr: divides/mods by zero print an error (stderr) and suppress the Result line for that input.
+- binexpr: prints "Error: division by zero" or "Error: modulo by zero" and no result for that line.
+- assign: on div/mod-by-zero, prints an error and assigns 0 to the variable for that statement.
 
 If you want, I can compile and run any of the examples here and show the outputs, or add small test scripts that run a set of inputs automatically.

@@ -1,20 +1,20 @@
 # Strict Binary Expression (`binexpr.y`) and Lexer (`binexpr.l`) — Explained
 
-This example enforces exactly two operands with one operator per input line, now supporting both integers and floating-point numbers (including signs and scientific notation). It’s useful to demonstrate precise pattern matching with Bison + Flex while still handling real numbers nicely.
+This example enforces exactly two operands with one operator per input line, now supporting both integers and floating-point numbers (including signs and scientific notation). Operators supported: +, -, *, /, %, ^.
 
 ---
 
 ## What it does
 
 - Accepts only lines of the form: `NUM op NUM` followed by a newline (`\n`).
-- Supported ops: `+  -  *  /`.
+- Supported ops: `+  -  *  /  %  ^`.
 - Numbers can be:
      - Integers (e.g., `12`, `-3`)
      - Floats (e.g., `12.5`, `.75`, `-0.5`)
      - Scientific notation (e.g., `1e2`, `-3.5E-1`, `+2.0e+3`)
 - Spaces around operands/operator are optional.
 - Windows newlines (`\r\n`) are handled transparently.
-- Prints parsed form and result; division by zero prints a clear error.
+- Prints parsed form and result; division by zero and modulo by zero print clear errors.
 
 Example
 ```text
@@ -60,10 +60,12 @@ Grammar and actions (strict patterns only)
 ```bison
 input: /* empty */ | input line ;
 
-line:  NUM '+' NUM '\n'  { double r = $1 + $3; printf("Parsed: "); print_num($1); printf(" + "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
-     |  NUM '-' NUM '\n'  { double r = $1 - $3; printf("Parsed: "); print_num($1); printf(" - "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
-     |  NUM '*' NUM '\n'  { double r = $1 * $3; printf("Parsed: "); print_num($1); printf(" * "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
-     |  NUM '/' NUM '\n'  { if ($3==0.0) { printf("Error: division by zero\n"); } else { double r = $1 / $3; printf("Parsed: "); print_num($1); printf(" / "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); } }
+line:  NUM '+' NUM '\n'  { ... print + ... }
+     |  NUM '-' NUM '\n'  { ... print - ... }
+     |  NUM '*' NUM '\n'  { ... print * ... }
+     |  NUM '/' NUM '\n'  { if ($3==0.0) { printf("Error: division by zero\n"); } else { ... print / ... } }
+     |  NUM '%' NUM '\n'  { if ($3==0.0) { printf("Error: modulo by zero\n"); } else { ... print % ... } }
+     |  NUM '^' NUM '\n'  { ... print ^ ... }
      ;
 ```
 - Only the four exact patterns are allowed; not a general expression grammar.
@@ -108,7 +110,10 @@ int yywrap(void){ return 1; }
 - `12.5 * 2\n` → `Parsed: 12.5 * 2 => Result = 25`
 - `-3 - -4.5\n` → `Parsed: -3 - -4.5 => Result = 1.5`
 - `+1.0e2 / 4e1\n` → `Parsed: 100 / 40 => Result = 2.5`
+- `5 % 2\n` → `Parsed: 5 % 2 => Result = 1`
+- `2 ^ 3\n` → `Parsed: 2 ^ 3 => Result = 8`
 - `7 / 0\n` → `Error: division by zero`
+- `5 % 0\n` → `Error: modulo by zero`
 - `3 + 4 + 5\n` → Invalid (doesn’t match any strict rule)
 
 ---

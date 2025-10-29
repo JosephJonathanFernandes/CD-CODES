@@ -1,19 +1,27 @@
 # Expression Parser (`expr.y`) and Lexer (`expr.l`) — Explained
 
-This note explains how the expression evaluator in this folder works, tying together the Bison/YACC parser (`expr.y`) and the Flex lexer (`expr.l`). Use it for viva or as a quick refresher.
+This note explains the full expression evaluator, now with floating-point math, variables with assignment, prefix/postfix ++/-- on identifiers, exponentiation (^) and modulo (%), along with error handling that suppresses output on bad lines.
 
 ---
 
 ## What it does
 
-- Parses and evaluates integer arithmetic expressions.
-- Supports: `+  -  *  /  ( )` and unary minus.
-- Prints the result when a newline (`\n`) is read.
+- Parses and evaluates arithmetic expressions over doubles (floats and ints).
+- Supports: `+  -  *  /  %  ^  ( )` and unary minus.
+- Variables and simple assignment: `name = expr`.
+- Prefix/postfix inc/dec on identifiers: `++x, --x, x++, x--`.
+- On division or modulo by zero, prints an error and does not print a result for that line.
+- Prints the result when a newline (`\n`) is read (unless an error occurred on that line).
 
-Example
+Examples
 ```text
-Input:  3 + 4 * 5\n
-Output: Result = 23
+Input:  3 + 4 * 5\n            → Result = 23
+Input:  1/2\n                   → Result = 0.5
+Input:  x = 5\n               → x = 5
+Input:  --x\n                  → Result = 4
+Input:  2 ^ 3 ^ 2\n         → Result = 512   (right-associative)
+Input:  5.5 % 2\n            → Result = 1.5
+Input:  7 / 0\n               → Error: division by zero  (no result line)
 ```
 
 ---
@@ -33,44 +41,66 @@ Output: Result = 23
 Header contracts
 ```c
 int yylex(void);           // provided by the lexer
-void yyerror(const char*); // your error reporter
-#define YYSTYPE int        // semantic value type is int
+void yyerror(const char*); // error reporter (also sets a per-line error flag)
 ```
 
-Token and precedence declarations
+Semantic values and tokens
 ```bison
-%token NUM
+%union { double d; int sym; }
+
+%token <d> NUM
+%token <sym> ID
+%token INC DEC
 %left '+' '-'
-%left '*' '/'
+%left '*' '/' '%'
 %right UMINUS
+%right '^'
+
+%type <d> expr
 ```
-- `%left` / `%right` assign precedence and associativity to operators.
-- `UMINUS` is a fake token name used to give unary minus a higher precedence via `%prec`.
+- `%union` carries either a double (`d`) or a symbol index (`sym`).
+- `ID` tokens carry a symbol index into a tiny symbol table.
+- `INC`/`DEC` are tokens for `++` and `--`.
 
 Grammar and actions (core rules, simplified)
 ```bison
 input: /* empty */ | input line ;
 
-line:  expr '\n'        { printf("Result = %d\n", $1); } ;
+line:  expr '\n'              { if (!had_error_line) printf("Result = %g\n", $1); had_error_line = 0; }
+    |  ID '=' expr '\n'       { if (!had_error_line) { syms[$1].val = $3; printf("%s = %g\n", syms[$1].name, syms[$1].val); } had_error_line = 0; }
+    |  error '\n'             { had_error_line = 0; yyerrok; }
+    ;
 
-expr:  expr '+' expr     { $$ = $1 + $3; }
-     | expr '-' expr     { $$ = $1 - $3; }
-     | expr '*' expr     { $$ = $1 * $3; }
-     | expr '/' expr     { if ($3 == 0) { yyerror("division by zero"); $$ = 0; } else $$ = $1 / $3; }
-     | '-' expr %prec UMINUS { $$ = -$2; }
-     | '(' expr ')'      { $$ = $2; }
-     | NUM               { $$ = $1; }
-     ;
+expr:  expr '+' expr           { $$ = $1 + $3; }
+  |  expr '-' expr           { $$ = $1 - $3; }
+  |  expr '*' expr           { $$ = $1 * $3; }
+  |  expr '/' expr           { if ($3 == 0.0) { yyerror("division by zero"); $$ = 0.0; } else $$ = $1 / $3; }
+  |  expr '%' expr           { if ($3 == 0.0) { yyerror("modulo by zero"); $$ = 0.0; } else $$ = fmod($1, $3); }
+  |  expr '^' expr           { $$ = pow($1, $3); }        // right-associative
+  |  '-' expr %prec UMINUS   { $$ = -$2; }
+  |  '(' expr ')'            { $$ = $2; }
+  |  NUM                     { $$ = $1; }
+  |  ID                      { $$ = syms[$1].val; }
+  |  INC ID                  { syms[$2].val += 1.0; $$ = syms[$2].val; } // ++x
+  |  DEC ID                  { syms[$2].val -= 1.0; $$ = syms[$2].val; } // --x
+  |  ID INC                  { $$ = syms[$1].val; syms[$1].val += 1.0; } // x++
+  |  ID DEC                  { $$ = syms[$1].val; syms[$1].val -= 1.0; } // x--
+  ;
 ```
 - `$$` is the value produced by the rule; `$1`, `$2`, `$3` are child values.
-- Division-by-zero is handled in the action and reported through `yyerror`.
-- `%prec UMINUS` ties the unary-minus rule to the high precedence of `UMINUS` so `-3*2` parses as `(-3) * 2`.
+- Division/modulo by zero set a line error via `yyerror` and suppress printing.
+- `%prec UMINUS` ties unary minus to a high precedence so `-3*2` parses as `(-3) * 2`.
+- `^` is right-associative by declaration; `2 ^ 3 ^ 2` parses as `2 ^ (3 ^ 2)`.
 
 Error handling
 ```c
-void yyerror(const char *s) { fprintf(stderr, "Error: %s\n", s); }
+void yyerror(const char *s) {
+  had_error_line = 1;
+  fprintf(stderr, "Error: %s\n", s);
+}
 ```
-- Called automatically by Bison on syntax errors or manually by your actions (e.g., division by zero).
+- Called by Bison on syntax errors or manually by actions (e.g., division/modulo by zero).
+- `had_error_line` prevents printing a `Result` for the current line; the parser then recovers on newline.
 
 Main
 ```c
@@ -86,23 +116,29 @@ int main(void) {
 ## Inside the lexer: `expr.l`
 
 Header notes
-- Includes `expr.tab.h` so it knows token codes like `NUM`.
+- Includes `expr.tab.h` so it knows token codes and `%union` layout.
 - Defines `int yywrap(void){ return 1; }` so Windows builds don’t need `-lfl`.
 
 Core rules (conceptual)
 ```flex
-[0-9]+   { yylval = atoi(yytext); return NUM; }
+[0-9]+(\.[0-9]*)?([eE][+-]?[0-9]+)?  { yylval.d = strtod(yytext, NULL); return NUM; }
+\.[0-9]+([eE][+-]?[0-9]+)?           { yylval.d = strtod(yytext, NULL); return NUM; }
+[A-Za-z_][A-Za-z0-9_]*               { yylval.sym = lookup(yytext); return ID; }
+"++"    { return INC; }
+"--"    { return DEC; }
 [ \t]+  ;                 // skip spaces/tabs
 "\n"    { return '\n'; }   // end-of-line triggers printing
 "+"     { return '+'; }
 "-"     { return '-'; }
 "*"     { return '*'; }
 "/"     { return '/'; }
+"%"     { return '%'; }
+"^"     { return '^'; }
 "("     { return '('; }
 ")"     { return ')'; }
 .       { return yytext[0]; } // any other single char
 ```
-- `yytext` is the matched lexeme; `atoi(yytext)` converts digits to an int.
+- `yytext` is the matched lexeme; numbers are parsed via `strtod`.
 - The lexer doesn’t print anything; it only identifies tokens for the parser.
 
 ---
@@ -115,11 +151,17 @@ Input: `3 + 4 * 5\n`
 3) Then reduces `3 + 20` to `23`.
 4) On `'\n'`, rule `line: expr '\n'` prints `Result = 23`.
 
-Unary minus example: `-3 + 2\n`
-- `- 3` reduces via the `%prec UMINUS` rule to `(-3)`, then `(-3) + 2` → `-1`.
+Unary minus example: `-3 + 2\n` → `Result = -1`.
 
-Division-by-zero example: `7 / 0\n`
-- Action detects `$3 == 0`, calls `yyerror("division by zero")`, sets `$$ = 0`, and prints `Result = 0`.
+Inc/dec examples (stateful per session):
+```
+x = 5\n   → x = 5
+--x\n    → Result = 4
+x--\n    → Result = 4   (x becomes 3)
+```
+
+Division/modulo-by-zero example: `7 / 0\n`
+- Action detects zero, calls `yyerror("division by zero")`; no `Result` line is printed for that input.
 
 ---
 
@@ -132,8 +174,10 @@ gcc lex.yy.c expr.tab.c -o expr.exe
 .\expr.exe
 # Try a few:
 # echo "3 + 4 * 5" | .\expr.exe
-# echo "-3 + 2" | .\expr.exe
-# echo "(3 + 4) * 5" | .\expr.exe
+# echo "1/2" | .\expr.exe
+# echo "x = 5`n--x" | .\expr.exe
+# echo "2 ^ 3 ^ 2" | .\expr.exe
+# echo "5.5 % 2" | .\expr.exe
 # echo "7 / 0" | .\expr.exe
 ```
 
@@ -148,14 +192,16 @@ Notes
 - Forgetting the newline: the `line` rule prints only when it sees `'\n'`.
 - Precedence without declarations: removing `%left/%right/%prec` will cause conflicts or wrong math.
 - Missing `#define YYSTYPE int` (or equivalent) causes type mismatches for `yylval`.
-- Not handling divide-by-zero: your code already does, but it’s a common gotcha.
+- Divide/modulo-by-zero suppress `Result` for that line; only an error is printed to stderr.
+- `--5` is a syntax error: inc/dec apply to identifiers only.
+- Right-associativity of `^`: `2 ^ 3 ^ 2` is `2 ^ (3 ^ 2)`.
 
 ---
 
 ## Where to go next
 
-- Add variables: introduce `ID` tokens and a symbol table to support names inside expressions.
-- Use `%union` to carry both numbers and strings cleanly.
+- Add functions like `sin`, `cos`, etc.
+- Add comparison/logical operators.
 - Enable parser tracing (`%define parse.trace`) to see shift/reduce steps during debugging.
 
 For broader YACC/Flex concepts and APIs, see `YACC_GUIDE.md`. For a lab-wide summary and viva prompts, see `PRESENTATION.md`.
