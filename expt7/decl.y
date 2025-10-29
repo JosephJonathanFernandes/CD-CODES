@@ -6,22 +6,33 @@ void yyerror(const char *s);
 %}
 
 %token VOID CHAR SHORT INT LONG FLOAT DOUBLE SIGNED UNSIGNED
-%token ID NUMBER FLOATCONST CHARCONST COMMA SEMICOLON ASSIGN ASTERISK LBRACKET RBRACKET INVALID
+%token CONST VOLATILE TYPEDEF STATIC EXTERN REGISTER
+%token ID NUMBER FLOATCONST CHARCONST STRINGLIT
+%token COMMA SEMICOLON ASSIGN ASTERISK LBRACKET RBRACKET LPAREN RPAREN INVALID
 
 %%
 
 decl
-    : type_specifier init_declarator_list SEMICOLON   { printf("Valid declaration\n"); }
+    : decl_specifiers init_declarator_list SEMICOLON   { printf("Valid declaration\n"); }
     ;
 
-/* one or more type tokens like: unsigned long long int */
-type_specifier
-    : type_token_list
+/* declaration specifiers: storage class | type specifiers | type qualifiers */
+decl_specifiers
+    : decl_specifiers decl_specifier
+    | decl_specifier
     ;
 
-type_token_list
-    : type_token
-    | type_token_list type_token
+decl_specifier
+    : storage_class_specifier
+    | type_qualifier
+    | type_token
+    ;
+
+storage_class_specifier
+    : TYPEDEF
+    | EXTERN
+    | STATIC
+    | REGISTER
     ;
 
 type_token
@@ -34,6 +45,11 @@ type_token
     | DOUBLE
     | SIGNED
     | UNSIGNED
+    ;
+
+type_qualifier
+    : CONST
+    | VOLATILE
     ;
 
 init_declarator_list
@@ -62,17 +78,16 @@ pointer
     ;
 
 direct_declarator
-    : ID array_dim_opt
+    : ID
+    | LPAREN declarator RPAREN
+    | direct_declarator LBRACKET const_expr_opt RBRACKET
+    | direct_declarator LPAREN parameter_list_opt RPAREN
     ;
 
-array_dim_opt
-    : /* empty */
-    | array_dim_opt LBRACKET const_number_opt RBRACKET
-    ;
-
-const_number_opt
+const_expr_opt
     : /* empty */
     | NUMBER
+    | ID
     ;
 
 /* keep initializer simple (constants or identifiers) */
@@ -80,7 +95,24 @@ initializer
     : NUMBER
     | FLOATCONST
     | CHARCONST
+    | STRINGLIT
     | ID
+    ;
+
+/* parameters: simplified */
+parameter_list_opt
+    : /* empty */
+    | parameter_list
+    ;
+
+parameter_list
+    : parameter_declaration
+    | parameter_list COMMA parameter_declaration
+    ;
+
+parameter_declaration
+    : decl_specifiers declarator
+    | decl_specifiers
     ;
 
 %%

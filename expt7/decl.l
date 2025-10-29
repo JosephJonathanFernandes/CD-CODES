@@ -18,6 +18,12 @@ int yywrap(void){ return 1; }
 	if (strcmp(yytext, "signed") == 0) return SIGNED;
 	if (strcmp(yytext, "unsigned") == 0) return UNSIGNED;
 	if (strcmp(yytext, "void") == 0) return VOID;
+	if (strcmp(yytext, "const") == 0) return CONST;
+	if (strcmp(yytext, "volatile") == 0) return VOLATILE;
+	if (strcmp(yytext, "typedef") == 0) return TYPEDEF;
+	if (strcmp(yytext, "static") == 0) return STATIC;
+	if (strcmp(yytext, "extern") == 0) return EXTERN;
+	if (strcmp(yytext, "register") == 0) return REGISTER;
 	return ID;
 }
 ","             { return COMMA; }
@@ -26,12 +32,16 @@ int yywrap(void){ return 1; }
 "*"             { return ASTERISK; }
 "["             { return LBRACKET; }
 "]"             { return RBRACKET; }
-
-[0-9]+\.[0-9]+                     { return FLOATCONST; }
+"("             { return LPAREN; }
+")"             { return RPAREN; }
+	[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?   { return FLOATCONST; }
+	\.[0-9]+([eE][+-]?[0-9]+)?         { return FLOATCONST; }
+	[0-9]+([eE][+-]?[0-9]+)             { return FLOATCONST; }
 
 [0-9]+                              { return NUMBER; }
 
-'[^\\\n]'                         { return CHARCONST; }
+	\"([^\\\"\n]|\\.)*\"            { return STRINGLIT; }
+'(\\.|[^\\\n])'                { return CHARCONST; }
 
 [ \t\n\r]+     { /* skip whitespace */ }
 .               { return INVALID; }
