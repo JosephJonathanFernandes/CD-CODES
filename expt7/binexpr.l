@@ -5,9 +5,11 @@ int yywrap(void){ return 1; }
 %}
 
 %%
-[0-9]+      { yylval = atoi(yytext); return NUM; }
+[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][+-]?[0-9]+)?  { yylval = strtod(yytext, NULL); return NUM; }
 [ \t]+     ;
+"\r\n"   { return '\n'; }
 "\n"      { return '\n'; }
+"\r"      ;
 "+"        { return '+'; }
 "-"        { return '-'; }
 "*"        { return '*'; }

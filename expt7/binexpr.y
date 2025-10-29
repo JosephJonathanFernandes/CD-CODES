@@ -1,10 +1,22 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
-#define YYSTYPE int
+#include <math.h>
 int yylex(void);
 void yyerror(const char *s);
+
+/* Print helper: show integer without .0, otherwise compact float */
+static void print_num(double v) {
+  long long iv = (long long)v;
+  if (v == (double)iv) {
+    printf("%lld", iv);
+  } else {
+    printf("%g", v);
+  }
+}
 %}
+
+%define api.value.type {double}
 
 %token NUM
 
@@ -16,10 +28,10 @@ input:
     ;
 
 line:
-      NUM '+' NUM '\n'    { printf("Parsed: %d + %d => Result = %d\n", $1, $3, $1+$3); }
-    | NUM '-' NUM '\n'    { printf("Parsed: %d - %d => Result = %d\n", $1, $3, $1-$3); }
-    | NUM '*' NUM '\n'    { printf("Parsed: %d * %d => Result = %d\n", $1, $3, $1*$3); }
-    | NUM '/' NUM '\n'    { if($3==0) { printf("Error: division by zero\n"); } else printf("Parsed: %d / %d => Result = %d\n", $1, $3, $1/$3); }
+      NUM '+' NUM '\n'    { double r = $1 + $3; printf("Parsed: "); print_num($1); printf(" + "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
+    | NUM '-' NUM '\n'    { double r = $1 - $3; printf("Parsed: "); print_num($1); printf(" - "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
+    | NUM '*' NUM '\n'    { double r = $1 * $3; printf("Parsed: "); print_num($1); printf(" * "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); }
+    | NUM '/' NUM '\n'    { if($3==0.0) { printf("Error: division by zero\n"); } else { double r = $1 / $3; printf("Parsed: "); print_num($1); printf(" / "); print_num($3); printf(" => Result = "); print_num(r); printf("\n"); } }
     ;
 
 %%
