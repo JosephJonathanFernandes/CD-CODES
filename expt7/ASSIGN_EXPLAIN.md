@@ -1,14 +1,19 @@
 # Assignment Parser (`assign.y`) and Lexer (`assign.l`) — Explained
 
+Update (multi-type support): The assignment parser now accepts and prints assignments for ints, floats, chars, strings, and booleans. Numeric RHS expressions are evaluated as doubles; other literal RHS types are accepted and echoed. See examples below.
+
 This note explains how the assignment example works. It parses statements like `x = 3 * (2 + 1);`, evaluates the right-hand side, and prints `x = 9`.
 
 ---
 
 ## What it does
 
-- Parses `ID = <expression> ;` statements.
-- Evaluates the integer expression on the right-hand side (supports +, -, *, /, parentheses, unary minus).
-- Prints the identifier name and computed value.
+- Parses `ID = <rhs> ;` statements where `<rhs>` can be:
+     - Numeric expression with integers and floats: `+, -, *, /, (), unary -` (evaluated to a number)
+     - A single character literal: `'a'`, `'\n'`
+     - A string literal: `"hello"` (common escapes handled)
+     - A boolean literal: `true` or `false`
+- Prints the identifier name and RHS value. Numeric values are printed as integers when exact (e.g., `7` instead of `7.0`).
 
 Example
 ```text
@@ -22,7 +27,7 @@ Output: x = 9
 
 - `main()` in `assign.y` calls `yyparse()`.
 - The parser calls the lexer `yylex()` to obtain tokens like `ID`, `NUM`, `ASSIGN` (`=`), `SEMICOLON`, and operators.
-- For each `ID`, the lexer copies the lexeme text into a global `char id_name[64]` so the parser can print it in the assignment action.
+- Tokens now carry typed semantic values via `%union` (e.g., `ID` and `STRING` carry `char*`, `NUM` carries `int`, `FLOAT` carries `double`, `CHARLIT` carries `char`, `TRUE/FALSE` carry `int`). The parser prints using these values; there’s no longer a global `id_name`.
 
 ---
 
@@ -30,10 +35,19 @@ Output: x = 9
 
 Header and contracts
 ```c
-#define YYSTYPE int
-extern char id_name[];   // set by the lexer when ID is scanned
-int yylex(void);
-void yyerror(const char *s);
+Uses `%union` to type semantic values and adds tokens for `FLOAT`, `CHARLIT`, `STRING`, `TRUE`, and `FALSE`. The assignment rule now has multiple alternatives:
+
+```bison
+stmt:
+          ID ASSIGN expr     SEMICOLON
+     | ID ASSIGN CHARLIT  SEMICOLON
+     | ID ASSIGN STRING   SEMICOLON
+     | ID ASSIGN TRUE     SEMICOLON
+     | ID ASSIGN FALSE    SEMICOLON
+     ;
+```
+
+`expr` evaluates numeric expressions as `double` and accepts both `NUM` and `FLOAT`.
 ```
 
 Tokens and precedence
@@ -72,8 +86,8 @@ void yyerror(const char *s) { fprintf(stderr, "Error: %s\n", s); }
 ## Inside the lexer: `assign.l`
 
 Key points
-- Saves the current identifier text into a global buffer `id_name[64]` whenever an `ID` is matched.
-- Sets `yylval` for `NUM` tokens via `atoi(yytext)`.
+- Returns typed tokens using `%union` fields: `NUM` (int), `FLOAT` (double), `CHARLIT` (char), `STRING` (char*), `TRUE/FALSE` (int), and `ID` (char*).
+- Converts string/char escapes (e.g., `\n`, `\t`) and strips quotes for `STRING` and `CHARLIT`.
 - Returns tokens for `=`, `;`, operators, and parentheses; skips whitespace.
 
 Core rules (conceptual)
@@ -99,6 +113,15 @@ Input: `x = 3 * (2 + 1);`
 
 Unary minus example: `y = -4 + 6;` → `y = 2`.
 
+More examples
+
+```text
+pi = 3.14159;      → pi = 3.14159
+c = 'A';           → c = 'A'
+msg = "Hi";        → msg = "Hi"
+ok = true;         → ok = true
+```
+
 Division-by-zero: `z = 7 / 0;` → prints `Error: division by zero` then `z = 0`.
 
 ---
@@ -123,11 +146,11 @@ Notes
 ## Pitfalls and limitations
 
 - No symbol table: assignments are not stored; you can’t use the variable later on the RHS.
-- Only integer arithmetic is supported.
+- Numeric expressions don’t allow identifiers yet (no variable references on RHS).
 - Missing `;` or malformed RHS triggers a syntax error via `yyerror`.
 
 ## Extensions
 
-- Add a map (symbol table) to store values by name; allow `expr` to use `ID` values.
-- Switch to `%union` to carry both numbers and identifier strings cleanly.
+- Add a map (symbol table) to store values by name; allow `expr` to use `ID` values and do type checking.
+- Support compound assignments (`+=`, `-=`, etc.).
 - Add error recovery (`error` token) to skip to next `;` and continue parsing.
