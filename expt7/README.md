@@ -5,7 +5,7 @@ This folder contains multiple small YACC (Bison) + Flex examples for learning sy
 Files provided:
 - expr.l / expr.y — full expression evaluator (supports multi-operator expressions, precedence, unary minus)
 - decl.l / decl.y — validate C-like declaration statements (e.g., "int a, b, c;")
-- binexpr.l / binexpr.y — strict two-operand expressions in form: num1 op num2
+- binexpr.l / binexpr.y — strict two-operand expressions in form: num1 op num2 (supports ints/floats, signs, scientific notation; ops: + - * /)
 - assign.l / assign.y — parse and evaluate assignment statements like: x = 3 * (2 + 1);
 
 How to build (PowerShell, MinGW/msys or WSL):
@@ -48,7 +48,7 @@ Notes:
 
 Sample inputs:
 - decl:  int a, b, c;
-- binexpr: 12 + 5
+- binexpr: 12 + 5, 12.5 * 2, -3 - -4.5, +1e2 / 4e1
 - expr: 3 + 4 * 5
 - assign: x = 3 * (2 + 1);
 
