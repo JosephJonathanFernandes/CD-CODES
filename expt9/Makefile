@@ -2,7 +2,7 @@ all: tac
 
 tac: y.tab.c lex.yy.c
 	@echo "Building tac..."
-	gcc -o tac y.tab.c lex.yy.c -lfl
+	gcc -o tac y.tab.c lex.yy.c
 
 y.tab.c y.tab.h: grammar.y
 	bison -d -y grammar.y

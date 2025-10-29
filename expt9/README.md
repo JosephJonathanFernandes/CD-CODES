@@ -19,7 +19,7 @@ On Windows
 Build (PowerShell example using MSYS/WSL-like tools available on PATH):
 
 ```powershell
-bison -d -y grammar.y; flex lexer.l; gcc -o tac y.tab.c lex.yy.c -lfl
+bison -d -y grammar.y; flex lexer.l; gcc -o tac y.tab.c lex.yy.c
 ```
 
 Or using the Makefile (if `make` is available):
@@ -31,7 +31,7 @@ make
 Run
 
 ```powershell
-./tac < test1.txt
+./tac.exe < test1.txt
 ```
 
 Sample `test1.txt` (example program):
@@ -61,3 +61,4 @@ L2:
 Notes
 - The implementation uses simple string temporaries (`t1`, `t2`, ...) and labels (`L1`, `L2`, ...). It's intentionally minimal for educational purposes.
 - For larger projects consider storing TAC in a data structure for further optimizations and pretty-printing.
+ - On Windows/MinGW, we don't link `-lfl` because `lexer.l` provides `yywrap`. If you use a Unix-like environment with libfl installed, linking with `-lfl` also works.
