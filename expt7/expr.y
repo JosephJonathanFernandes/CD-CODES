@@ -2,11 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define YYSTYPE int
-
 int yylex(void);
 void yyerror(const char *s);
+
+/* Track whether the current input line had an error (syntax or semantic) */
+static int had_error_line = 0;
 %}
+
+%define api.value.type {double}
 
 %token NUM
 %left '+' '-'
@@ -16,27 +19,29 @@ void yyerror(const char *s);
 %%
 
 input:
-      /* empty */
-    | input line
-    ;
+            /* empty */
+        | input line
+        ;
 
 line:
-      expr '\n'    { printf("Result = %d\n", $1); }
-    ;
+            expr '\n'    { if (!had_error_line) printf("Result = %g\n", $1); had_error_line = 0; }
+        | error '\n'   { had_error_line = 0; yyerrok; }
+        ;
 
 expr:
-      expr '+' expr    { $$ = $1 + $3; }
-    | expr '-' expr    { $$ = $1 - $3; }
-    | expr '*' expr    { $$ = $1 * $3; }
-    | expr '/' expr    { if ($3 == 0) { yyerror("division by zero"); $$ = 0; } else $$ = $1 / $3; }
-    | '-' expr %prec UMINUS { $$ = -$2; }
-    | '(' expr ')'     { $$ = $2; }
-    | NUM              { $$ = $1; }
-    ;
+            expr '+' expr    { $$ = $1 + $3; }
+        | expr '-' expr    { $$ = $1 - $3; }
+        | expr '*' expr    { $$ = $1 * $3; }
+        | expr '/' expr    { if ($3 == 0.0) { yyerror("division by zero"); $$ = 0.0; } else $$ = $1 / $3; }
+        | '-' expr %prec UMINUS { $$ = -$2; }
+        | '(' expr ')'     { $$ = $2; }
+        | NUM              { $$ = $1; }
+        ;
 
 %%
 
 void yyerror(const char *s) {
+    had_error_line = 1;
     fprintf(stderr, "Error: %s\n", s);
 }
 
