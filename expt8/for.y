@@ -20,11 +20,13 @@ int had_error = 0; /* flag for current program */
 %token TYPE
 %token SEP
 
+%left EQ NE
+%left '<' '>' LE GE
 %left '+' '-'
 %left '*' '/'
 %right UMINUS
 
-%start program
+%start program_list
 
 %%
 
@@ -67,7 +69,13 @@ decl_stmt:
   ;
 
 expr:
-    expr '+' expr
+    expr '<' expr
+  | expr '>' expr
+  | expr LE expr
+  | expr GE expr
+  | expr EQ expr
+  | expr NE expr
+  | expr '+' expr
   | expr '-' expr
   | expr '*' expr
   | expr '/' expr
@@ -94,11 +102,7 @@ for_init:
   ;
 
 for_cond:
-    expr relop expr
-  ;
-
-relop:
-    '<' | '>' | LE | GE | EQ | NE
+    expr
   ;
 
 for_inc:

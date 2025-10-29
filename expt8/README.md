@@ -1,4 +1,4 @@
-YACC/Flex: Validation of basic and nested for/while/do-while loops
+YACC/Flex: Validate basic and nested for-loops with assignments
 
 Files provided
 - for.y         — Bison/YACC grammar (parser)
@@ -6,13 +6,22 @@ Files provided
 - sample_inputs.txt — Example inputs (valid and invalid)
 
 Goal
-Validate syntax of basic and nested for-loops, while-loops, and do-while loops with assignment statements.
-This version also supports simple declarations (e.g. `int x;`, `int y = 2;`) and improved expression parsing with operator precedence (*/ before +- and parentheses), plus unary minus.
+Validate syntax of a basic for loop as well as nested for loops with assignment statements.
+Note: The grammar also supports while and do-while loops, simple `int` declarations, and expressions with operator precedence and unary minus. These extras are harmless and can be ignored if your assignment only asks for `for`.
 
 How it works (contract)
-- Input: a C-like snippet containing assignment statements, for-loops and blocks.
-- Output: prints either "Input is syntactically correct." or "Input has syntax errors." and the parser will print syntax error location using line numbers.
-- Error modes: syntax errors are reported via yyerror with the line number.
+- Input: a C-like snippet containing assignment statements and `for`-loops (nesting allowed). Blocks `{ ... }` are supported.
+- Output: For each program snippet (separated by a line with `###`), the parser prints either `Program: syntactically correct.` or `Program: has syntax errors.`; any syntax errors include the line number.
+- Error modes: syntax errors are reported via `yyerror` with the current `yylineno`.
+
+Quick try (Windows, using included binary)
+
+```powershell
+cd "c:\Users\Joseph\Desktop\compiler design\expt8"
+Get-Content .\sample_inputs.txt | .\for.exe | Tee-Object -FilePath .\parser_output.txt
+```
+
+This will create `parser_output.txt` with the validation results for each snippet separated by `###`.
 
 Building and running (Windows notes)
 
@@ -23,10 +32,20 @@ Prerequisites (one of the options):
 Recommended steps (PowerShell; adapt if using WSL):
 
 1) Using GNU tools (winflexbison / mingw) installed and on PATH
-   cd "c:\Users\Joseph\Desktop\compiler design\expt8"
-   bison -d -v for.y           # generates for.tab.c and for.tab.h
-   flex for.l                  # generates lex.yy.c
-   gcc -o forparser for.tab.c lex.yy.c -lfl   # may need -lfl or libflex on Windows
+    - cd to the folder:
+       ```powershell
+       cd "c:\Users\Joseph\Desktop\compiler design\expt8"
+       ```
+    - Generate parser and scanner:
+       ```powershell
+       bison -d -v .\for.y      # generates for.tab.c and for.tab.h
+       flex .\for.l             # generates lex.yy.c
+       ```
+    - Compile:
+       ```powershell
+       gcc -o for.exe .\for.tab.c .\lex.yy.c -lfl
+       # If -lfl fails on Windows, try without it or link the flex library that your toolchain provides
+       ```
 
 2) Using WSL (Ubuntu) — open WSL shell and run inside project folder
    bison -d for.y
@@ -35,13 +54,12 @@ Recommended steps (PowerShell; adapt if using WSL):
 
 Run
 - Then feed a source:
-  cat sample_inputs.txt | ./forparser
-  # or on Windows PowerShell
-  Get-Content sample_inputs.txt | ./forparser
+   ```powershell
+   Get-Content .\sample_inputs.txt | .\for.exe
+   ```
 
 Notes and assumptions
-- The grammar is a simplified C-like grammar for the purpose of syntax validation only. It accepts assignments, nested for-loops, while and do-while loops, blocks ({}), ++/-- in increment, and simple expressions using + and -.
-- The grammar is a simplified C-like grammar for the purpose of syntax validation only. It accepts assignments, declarations (`int`), nested loops (for/while/do-while), blocks ({}), ++/-- in increment, and expressions with +, -, *, / and parentheses. Operator precedence and unary minus are supported.
+- The grammar is a simplified C-like grammar for syntax validation only. It accepts assignments, nested `for`-loops, while/do-while (extra), blocks `{}`, `++/--` in the increment part, and expressions with `+ - * /` and parentheses. Operator precedence and unary minus are supported.
 - This is a syntax checker only — no semantic checks (types, variable declarations, etc.).
 
 Sample inputs are provided in `sample_inputs.txt` to try both valid and invalid examples.
