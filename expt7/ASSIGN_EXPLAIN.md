@@ -1,19 +1,17 @@
 # Assignment Parser (`assign.y`) and Lexer (`assign.l`) — Explained
 
-Update (multi-type support): The assignment parser now accepts and prints assignments for ints, floats, chars, strings, and booleans. Numeric RHS expressions are evaluated as doubles; other literal RHS types are accepted and echoed. See examples below.
-
-This note explains how the assignment example works. It parses statements like `x = 3 * (2 + 1);`, evaluates the right-hand side, and prints `x = 9`.
+Updated: Supports multi-type assignments (int, float, char, string, boolean) and evaluates numeric expressions. This page explains what it parses, how it’s implemented, and exactly how to build/run it on Windows (PowerShell).
 
 ---
 
 ## What it does
 
-- Parses `ID = <rhs> ;` statements where `<rhs>` can be:
-     - Numeric expression with integers and floats: `+, -, *, /, (), unary -` (evaluated to a number)
-     - A single character literal: `'a'`, `'\n'`
-     - A string literal: `"hello"` (common escapes handled)
-     - A boolean literal: `true` or `false`
-- Prints the identifier name and RHS value. Numeric values are printed as integers when exact (e.g., `7` instead of `7.0`).
+- Parses `ID = <rhs> ;` where `<rhs>` can be:
+     - Numeric expression over ints and floats: `+ - * / ( )` and unary minus
+     - Character literal: `'A'` (simple form)
+     - String literal: `"hello"` (with common escapes handled)
+     - Boolean literal: `true` | `false`
+- Prints `name = value`. Numeric values are printed without a trailing `.0` when integral (e.g., `7`).
 
 Example
 ```text
@@ -25,83 +23,75 @@ Output: x = 9
 
 ## How the pieces talk
 
-- `main()` in `assign.y` calls `yyparse()`.
-- The parser calls the lexer `yylex()` to obtain tokens like `ID`, `NUM`, `ASSIGN` (`=`), `SEMICOLON`, and operators.
-- Tokens now carry typed semantic values via `%union` (e.g., `ID` and `STRING` carry `char*`, `NUM` carries `int`, `FLOAT` carries `double`, `CHARLIT` carries `char`, `TRUE/FALSE` carry `int`). The parser prints using these values; there’s no longer a global `id_name`.
+- `main()` in `assign.y` prints a short help then calls `yyparse()`.
+- The parser asks the lexer (`yylex`) for tokens such as `ID`, `NUM`, `FLOAT`, `CHARLIT`, `STRING`, `TRUE`, `FALSE`, `ASSIGN (=)`, `SEMICOLON (;)`, and operators.
+- Semantic values are typed via `%union`:
+     - `ID`, `STRING` → `char*`
+     - `NUM` → `int`
+     - `FLOAT` → `double`
+     - `CHARLIT` → `char`
+     - `TRUE`/`FALSE` → `int` (0/1)
 
 ---
 
 ## Inside the parser: `assign.y`
 
-Header and contracts
-```c
-Uses `%union` to type semantic values and adds tokens for `FLOAT`, `CHARLIT`, `STRING`, `TRUE`, and `FALSE`. The assignment rule now has multiple alternatives:
+Key grammar (accurate to source):
 
 ```bison
-stmt:
-          ID ASSIGN expr     SEMICOLON
-     | ID ASSIGN CHARLIT  SEMICOLON
-     | ID ASSIGN STRING   SEMICOLON
-     | ID ASSIGN TRUE     SEMICOLON
-     | ID ASSIGN FALSE    SEMICOLON
-     ;
-```
+%union {
+     int    ival;     /* for NUM */
+     double fval;     /* for FLOAT and expr */
+     char   cval;     /* for CHARLIT */
+     int    bval;     /* 0/1 for FALSE/TRUE */
+     char  *sval;     /* for ID and STRING */
+}
 
-`expr` evaluates numeric expressions as `double` and accepts both `NUM` and `FLOAT`.
-```
-
-Tokens and precedence
-```bison
-%token ID NUM ASSIGN SEMICOLON
+%type <fval> expr
 %left '+' '-'
 %left '*' '/'
 %right UMINUS
-```
 
-Grammar and actions
-```bison
-input: /* empty */ | input stmt ;
+stmt:
+               ID ASSIGN expr     SEMICOLON  { /* prints as int if integral */ }
+          | ID ASSIGN CHARLIT  SEMICOLON
+          | ID ASSIGN STRING   SEMICOLON
+          | ID ASSIGN TRUE     SEMICOLON
+          | ID ASSIGN FALSE    SEMICOLON
+          ;
 
-stmt:  ID ASSIGN expr SEMICOLON { printf("%s = %d\n", id_name, $3); } ;
+expr:
+               expr '+' expr
+          | expr '-' expr
+          | expr '*' expr
+          | expr '/' expr      /* guarded div-by-zero (prints error, yields 0) */
+          | '-' expr %prec UMINUS
+          | '(' expr ')'
+          | NUM                /* cast to double */
+          | FLOAT
+          ;
 
-expr:  expr '+' expr     { $$ = $1 + $3; }
-     | expr '-' expr     { $$ = $1 - $3; }
-     | expr '*' expr     { $$ = $1 * $3; }
-     | expr '/' expr     { if ($3 == 0) { yyerror("division by zero"); $$ = 0; } else $$ = $1 / $3; }
-     | '-' expr %prec UMINUS { $$ = -$2; }
-     | '(' expr ')'      { $$ = $2; }
-     | NUM               { $$ = $1; }
-     ;
-```
-- The assignment rule prints the left-hand identifier (`id_name`) and the computed RHS value (`$3`).
-- Expressions reuse the same precedence scheme as the full evaluator.
-
-Error handling
-```c
 void yyerror(const char *s) { fprintf(stderr, "Error: %s\n", s); }
 ```
+
+Notes
+- Division by zero is detected with a small epsilon check using `fabs`.
+- When printing numeric results, the code avoids a trailing `.0` by checking if the double is integral. IDs and strings are freed to avoid leaks.
 
 ---
 
 ## Inside the lexer: `assign.l`
 
-Key points
-- Returns typed tokens using `%union` fields: `NUM` (int), `FLOAT` (double), `CHARLIT` (char), `STRING` (char*), `TRUE/FALSE` (int), and `ID` (char*).
-- Converts string/char escapes (e.g., `\n`, `\t`) and strips quotes for `STRING` and `CHARLIT`.
-- Returns tokens for `=`, `;`, operators, and parentheses; skips whitespace.
-
-Core rules (conceptual)
-```flex
-[a-zA-Z][a-zA-Z0-9]* { strncpy(id_name, yytext, sizeof(id_name)-1); id_name[sizeof(id_name)-1] = '\0'; return ID; }
-[0-9]+               { yylval = atoi(yytext); return NUM; }
-"="                 { return ASSIGN; }
-";"                 { return SEMICOLON; }
-"+"|"-"|"*"|"/"     { return yytext[0]; }
-"("|")"            { return yytext[0]; }
-[ \t\n]+            ;  // skip spaces/tabs/newlines
-.                    { return yytext[0]; }
-int yywrap(void){ return 1; }
-```
+Highlights
+- Returns typed tokens consistent with `%union`:
+     - Booleans: `true`/`false` → `TRUE`/`FALSE` with `bval` set
+     - Floats (incl. exponent forms) → `FLOAT` using `strtod`
+     - Integers (incl. optional exponent) → `NUM` via `strtol`
+     - Char literal (simple `'c'` form) → `CHARLIT`
+     - String literal with escapes → `STRING` (quotes stripped, escapes unescaped)
+     - Identifiers → `ID` (duplicated string)
+- Operators and punctuation are returned as literal characters or specific tokens (`ASSIGN`, `SEMICOLON`).
+- `yywrap()` returns 1, so no extra link library is needed on Windows.
 
 ---
 
@@ -126,27 +116,34 @@ Division-by-zero: `z = 7 / 0;` → prints `Error: division by zero` then `z = 0`
 
 ---
 
-## Build and run (PowerShell)
+## Build and run (Windows PowerShell)
 
 ```powershell
+# Generate parser/lexer
 bison -d assign.y
 flex assign.l
-gcc lex.yy.c assign.tab.c -o assign.exe
+
+# Compile (link math for fabs)
+gcc assign.tab.c lex.yy.c -o assign.exe -lm
+
+# Run interactively
 .\assign.exe
-# Example
-# echo "x = 3 * (2 + 1);" | .\assign.exe
+
+# Or pipe a quick test
+Write-Output "x = 3 * (2 + 1); y = 3.14;" | .\assign.exe
+Write-Output 's = "hi"; c = '\''A'\''; b = false;' | .\assign.exe
 ```
 
 Notes
 - Press Ctrl+Z then Enter to quit interactive mode.
-- No `-lfl` needed due to `yywrap()` stub.
+- No `-lfl` is needed on Windows because `yywrap()` is defined in the lexer.
 
 ---
 
 ## Pitfalls and limitations
 
 - No symbol table: assignments are not stored; you can’t use the variable later on the RHS.
-- Numeric expressions don’t allow identifiers yet (no variable references on RHS).
+- No symbol table: RHS expressions don’t allow identifiers (no variable references).
 - Missing `;` or malformed RHS triggers a syntax error via `yyerror`.
 
 ## Extensions

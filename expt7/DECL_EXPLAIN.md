@@ -1,6 +1,6 @@
 # Declaration Validator (`decl.y`) and Lexer (`decl.l`)
 
-This project validates C-like declaration statements. It supports primitive types, qualifiers, storage classes, struct/union/enum tags, typedef-names, pointers (with qualifiers), arrays, function declarators, and simple initializers.
+This project validates single C-like declaration statements. It supports primitive types, qualifiers, storage classes, struct/union/enum tags, typedef-names, pointers (with qualifiers), arrays, function declarators, and simple initializers.
 
 ---
 
@@ -41,7 +41,7 @@ int f() = 3;                 -> Invalid declaration (initializer not allowed for
 
 ## How the pieces talk
 
-- `main()` in `decl.y` calls `yyparse()`.
+- `main()` in `decl.y` prompts once and calls `yyparse()` to parse exactly one declaration.
 - Lexer tokens:
   - Types: `VOID`, `CHAR`, `SHORT`, `INT`, `LONG`, `FLOAT`, `DOUBLE`, `SIGNED`, `UNSIGNED`
   - Qualifiers/storage: `CONST`, `VOLATILE`, `TYPEDEF`, `STATIC`, `EXTERN`, `REGISTER`
@@ -57,7 +57,7 @@ int f() = 3;                 -> Invalid declaration (initializer not allowed for
 
 Highlights
 - Recognizes keywords for types/qualifiers/storage and tags.
-- Typedef-name tracking: after seeing `typedef`, all following identifiers up to `;` are recorded as typedef names and returned as `TYPE_NAME` (also recognized later in the same run).
+- Typedef-name tracking: after seeing `typedef`, all following identifiers up to the next `;` are recorded as typedef names and returned as `TYPE_NAME`. Because the program parses only a single declaration per run, typedef-names are practically scoped to that one declaration.
 - Literals:
   - Integers (`NUMBER`)
   - Floats: `digits.digits`, `.digits`, `digits.` with optional exponent (`FLOATCONST`)
@@ -103,7 +103,7 @@ void yyerror(const char *s) {
 
 ---
 
-## Build and run (PowerShell on Windows)
+## Build and run (Windows PowerShell)
 
 ```powershell
 # Generate parser and lexer
@@ -111,19 +111,20 @@ bison -d decl.y
 flex decl.l
 
 # Compile (requires MinGW-w64 gcc or similar on PATH)
-gcc lex.yy.c decl.tab.c -o decl.exe
+gcc decl.tab.c lex.yy.c -o decl.exe
 
-# Run
-./decl.exe
-# Or pipe input
-"unsigned long long **pp;" | ./decl.exe
+# Run once interactively (expects exactly one declaration)
+.\decl.exe
+
+# Or pipe a single declaration line
+Write-Output "unsigned long long **pp;" | .\decl.exe
 ```
 
 Notes
 - Whitespace is ignored by the lexer.
 - No `-lfl` link is needed because `yywrap()` is defined.
-- If you don't have gcc on Windows, install MSYS2/MinGW or compile with another C compiler.
- - Typedef names persist only within a single program run. Since `main()` parses one declaration per run, testing `typedef` and its usage together requires piping both in one input line (e.g., `"typedef int I; I x;"`).
+- If you don't have gcc on Windows, install MSYS2/MinGW or use another C compiler.
+- Typedef names are recognized only within the same declaration (up to the `;`) in this program. The parser accepts exactly one declaration per run, so you cannot declare a typedef and then use it in a second declaration within the same execution.
 
 Known limitations (kept intentionally small)
 - No struct/union/enum definitions (only tags like `struct S`)
@@ -134,7 +135,5 @@ Known limitations (kept intentionally small)
 ---
 
 ## Tips
-- To test typedef usage in the same run:
-  - `"typedef int I; I x;" | ./decl.exe`
-- To inspect parser conflicts (should be zero now):
+- To inspect parser conflicts:
   - `bison -Wconflicts-sr -Wconflicts-rr -Wcounterexamples -d decl.y`
