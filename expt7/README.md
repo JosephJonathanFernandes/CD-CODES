@@ -51,6 +51,16 @@ Notes:
 - To quit interactive runs on Windows press Ctrl+Z then Enter.
 - If using Bison/Flex from MSYS2 or WSL, commands are the same but run inside those environments.
 
+Running tests (PowerShell):
+
+- Expression evaluator tests
+	- Build: `bison -d expr.y; flex expr.l; gcc lex.yy.c expr.tab.c -o expr.exe`
+	- Run: `tests\run-expr-tests.ps1`
+
+- Declaration validator tests
+	- Build: `bison -d decl.y; flex decl.l; gcc lex.yy.c decl.tab.c -o decl.exe`
+	- Run: `tests\run-decl-tests.ps1`
+
 Sample inputs:
 - decl:  int a, b, c;
 - binexpr: 12 + 5, 12.5 * 2, -3 - -4.5, +1e2 / 4e1, 5 % 2, 2 ^ 3

@@ -1,0 +1,23 @@
+Enter assignments like: x = 3 + 4; y = 3.14; c = 'A'; s = "hi"; b = true;
+Ctrl+Z then Enter to quit.
+x = 7
+y = 3.14
+c = 'A'
+s = "hi"
+b = true
+x = 8
+y = 512
+z = -4
+a = 4
+b = 1
+c = 1.5
+d = 0
+x = 3
+y = 14
+z = 0
+s = "hello"
+c = 'Z'
+b = false
+d = 5.1
+a = 0
+b = 1

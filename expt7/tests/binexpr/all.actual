@@ -1,0 +1,14 @@
+Enter binary expressions (num1 op num2). Ctrl+Z then Enter to quit.
+Parsed: 2 + 3 => Result = 5
+Parsed: -3 - -4.5 => Result = 1.5
+Parsed: 12.5 * 2 => Result = 25
+Parsed: 10 / 4 => Result = 2.5
+Parsed: 1 / 2 => Result = 0.5
+Error: division by zero
+Parsed: 5 % 2 => Result = 1
+Parsed: 5.5 % 2 => Result = 1.5
+Error: modulo by zero
+Parsed: 2 ^ 3 => Result = 8
+Parsed: -2 ^ 2 => Result = 4
+Parsed: 2 ^ -3 => Result = 0.125
+Parsed: 100 / 40 => Result = 2.5

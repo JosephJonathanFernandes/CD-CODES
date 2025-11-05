@@ -1,0 +1,15 @@
+int a[];
+int a, b, c;
+char c = 'a';
+int , a;
+int * const p;
+enum E;
+int f();
+int (*fp)(int, char);
+int f(int a, char b);
+float x = 3.14, y;
+int f() = 3;
+short [10] a;
+double m[3][4], *p = 0;
+int a, ;
+void *ptr;
