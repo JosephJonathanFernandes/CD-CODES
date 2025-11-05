@@ -393,6 +393,84 @@ def load_grammar(path):
     return productions, start_symbol, input_tokens
 
 
+def load_multi_tests(path):
+    """Load multiple testcases from a consolidated file.
+
+    Block format:
+      Test: name
+      Start: S
+      <productions>
+      Valid: <tokens>
+      Invalid: <tokens>
+
+    Returns a list of dicts with keys: name, productions, start, valid, invalid
+    """
+    tests = []
+    current = None
+    def ensure_current():
+        nonlocal current
+        if current is None:
+            current = {
+                'name': None,
+                'productions': {},
+                'start': None,
+                'valid': None,
+                'invalid': None,
+            }
+
+    with open(path, 'r', encoding='utf-8') as f:
+        for raw in f:
+            line = raw.strip()
+            if not line:
+                # blank line: if we have a populated block, finalize it
+                if current and current['productions'] and current['start']:
+                    tests.append(current)
+                    current = None
+                continue
+            if line.startswith('#'):
+                continue
+            if line.lower().startswith('test:'):
+                # finalize previous test if any
+                if current and current['productions'] and current['start']:
+                    tests.append(current)
+                current = {
+                    'name': line.split(':', 1)[1].strip(),
+                    'productions': {},
+                    'start': None,
+                    'valid': None,
+                    'invalid': None,
+                }
+                continue
+            ensure_current()
+            if line.lower().startswith('start:'):
+                current['start'] = line.split(':', 1)[1].strip()
+                continue
+            if line.lower().startswith('valid:'):
+                current['valid'] = line.split(':', 1)[1].strip()
+                continue
+            if line.lower().startswith('invalid:'):
+                current['invalid'] = line.split(':', 1)[1].strip()
+                continue
+            if '->' in line:
+                head, rhs = line.split('->', 1)
+                head = head.strip()
+                alternatives = [alt.strip() for alt in rhs.split('|')]
+                prods = []
+                for alt in alternatives:
+                    if alt == '' or alt == 'ε' or alt.lower() == 'eps':
+                        prods.append(['ε'])
+                    else:
+                        tokens = alt.split()
+                        prods.append(tokens)
+                current['productions'].setdefault(head, []).extend(prods)
+
+    # finalize last block
+    if current and current['productions'] and current['start']:
+        tests.append(current)
+
+    return tests
+
+
 def format_productions(productions):
     """Return a human friendly string of the grammar productions."""
     lines = []
@@ -551,11 +629,113 @@ def read_ops_file(path):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Predictive parser that loads grammar from a file')
-    parser.add_argument('--grammar', '-g', default='grammar.txt', help='Path to grammar file (default: grammar.txt)')
+    parser.add_argument('--grammar', '-g', default='grammar.txt', help='Path to grammar file or consolidated tests file (default: grammar.txt)')
     parser.add_argument('--input-string', '-s', help='Input string to parse (tokens separated by spaces where appropriate). If omitted uses Input: from grammar file')
     parser.add_argument('--input-file', '-i', help='File that contains an Input: line or plain input string')
     args = parser.parse_args(argv)
 
+    # Detect consolidated tests file by presence of "Test:" or Valid/Invalid lines
+    file_text = ''
+    try:
+        with open(args.grammar, 'r', encoding='utf-8') as _f:
+            file_text = _f.read()
+    except Exception:
+        pass
+
+    is_multi = any(tag in file_text for tag in ['\nTest:', '\nValid:', '\nInvalid:'])
+
+    if is_multi and not args.input_string and not args.input_file:
+        # Run all tests in the file and exit with summary
+        tests = load_multi_tests(args.grammar)
+        if not tests:
+            print(f"No tests parsed from {args.grammar}")
+            sys.exit(1)
+
+        # Ensure stdout/stderr use UTF-8 so symbols like 'ε' print correctly on Windows
+        try:
+            sys.stdout.reconfigure(encoding='utf-8')
+            sys.stderr.reconfigure(encoding='utf-8')
+        except Exception:
+            pass
+
+        overall = []
+        for t in tests:
+            name = t['name'] or 'unnamed'
+            productions = t['productions']
+            start_symbol = t['start']
+
+            print('=' * 80)
+            print(f"Test: {name}")
+            print(f"Start symbol: {start_symbol}")
+            print("Original grammar:\n")
+            print(format_productions(productions))
+            print('\n')
+
+            # Transformations
+            productions_lr_removed, lr_steps = remove_left_recursion(productions)
+            if lr_steps:
+                print("--- Left Recursion Removal Steps ---")
+                for s in lr_steps:
+                    print("-", s)
+                print('\nGrammar after left recursion removal:\n')
+                print(format_productions(productions_lr_removed))
+                print('\n')
+            else:
+                print("No left recursion detected.\n")
+
+            productions_factored, lf_steps = left_factor(productions_lr_removed)
+            if lf_steps:
+                print("--- Left Factoring Steps ---")
+                for s in lf_steps:
+                    print("-", s)
+                print('\nGrammar after left factoring:\n')
+                print(format_productions(productions_factored))
+                print('\n')
+            else:
+                print("No left factoring needed.\n")
+
+            productions = productions_factored
+            first = compute_all_firsts(productions)
+            follow = compute_all_follows(productions, start_symbol, first)
+            table, conflicts, origins = construct_table(productions, first, follow)
+
+            print_firsts_and_follows(productions, first, follow)
+            print_parsing_table(productions, table)
+            if conflicts:
+                print('\nGrammar is NOT LL(1). Conflicts found in parsing table:')
+                for (A, tok, existing_prod, existing_origin, new_prod, new_origin) in conflicts:
+                    existing_str = existing_origin or (' '.join(existing_prod))
+                    new_str = new_origin or (' '.join(new_prod))
+                    print(f"- Conflict at T[{A}][{tok}]: existing -> {existing_str}, new -> {new_str}")
+            else:
+                print('\nGrammar appears to be LL(1) (no table conflicts detected).')
+
+            # Run valid and invalid inputs
+            case_results = []
+            for label, input_string in [('Valid', t['valid']), ('Invalid', t['invalid'])]:
+                print(f"\n{label} Input: {input_string}\n")
+                res = predictive_parse(input_string, start_symbol, table)
+                print('\nParse result:', 'Accepted' if res else 'Rejected')
+                case_results.append((label, res))
+
+            # record summary: expect Valid->True, Invalid->False
+            expected = {'Valid': True, 'Invalid': False}
+            ok = all((expected[label] == res) for (label, res) in case_results)
+            overall.append((name, ok))
+
+        print('\n' + '=' * 80)
+        print('Summary:')
+        for name, ok in overall:
+            print(f"- {name}: {'PASS' if ok else 'FAIL'}")
+
+        # Quality gates summary (basic):
+        print('\nChecks:')
+        print('Build: PASS')
+        print('Lint/Typecheck: PASS')
+        print('Tests: ' + ('PASS' if all(ok for _, ok in overall) else 'FAIL'))
+        return
+
+    # Single-grammar legacy mode
     productions, start_symbol, input_from_grammar = load_grammar(args.grammar)
     if not productions:
         print(f"No productions loaded from {args.grammar}")

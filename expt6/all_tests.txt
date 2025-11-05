@@ -1,0 +1,59 @@
+# Consolidated testcases (one file)
+# Each block defines a grammar and two inputs: one that should parse (Valid)
+# and one that should not (Invalid).
+#
+# Format:
+# Test: <name>
+# Start: <NonTerminal>
+# <Productions>
+# Valid: <input tokens>
+# Invalid: <input tokens>
+#
+# Tokens are space-separated; epsilon may be written as ε or eps.
+
+Test: simple
+Start: S
+S -> a b | c
+Valid: a b
+Invalid: a a
+
+Test: nullable
+Start: S
+S -> A b | c
+A -> ε | a
+Valid: a b
+Invalid: a a
+
+Test: expr_lr
+Start: E
+E -> E + T | T
+T -> T * F | F
+F -> ( E ) | id
+Valid: id + id * id
+Invalid: id + * id
+
+Test: factor_example
+Start: S
+S -> A k O
+A -> A d | a B | a C
+B -> b B C | r
+C -> c
+Valid: a r k O
+Invalid: a k O
+
+Test: indirect_lr
+Start: S
+S -> A a | b
+A -> S d | c
+Valid: c a
+Invalid: b a
+
+
+Test: direct_recursive_example
+Start: S
+S -> S a | b
+A -> a b | a c
+Valid: b a
+Invalid: a a a
+
+

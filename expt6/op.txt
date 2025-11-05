@@ -1,19 +1,440 @@
-Using grammar from: grammar.txt
+PS C:\Users\Joseph\Desktop\compiler design\expt6> python "c:\Users\Joseph\Desktop\compiler design\expt6\expt6.py" --grammar "c:\Users\Joseph\Desktop\compiler design\expt6\all_tests.txt"
+================================================================================
+Test: simple
 Start symbol: S
 Original grammar:
 
-S -> S a | b
-A -> a b | a c
+S ⇒ a b | c
+
+
+No left recursion detected.
+
+No left factoring needed.
+
+
+Calculated firsts:
+first(S) => {a, c}
+
+Calculated follows:
+follow(S) => {$}
+
+Firsts and Follow Result table
+
+Non-T   FIRST         FOLLOW
+S       ['a', 'c']    ['$']
+
+Generated parsing table:
+
+        a        b  c      $
+S       S ⇒ a b     S ⇒ c
+
+Grammar appears to be LL(1) (no table conflicts detected).
+
+Valid Input: a b
+
+Buffer                        Stack                         Action
+a b $                         S $                           T[S][a] = S ⇒ a b
+a b $                         a b $
+a b $                         a b $                         Matched:a
+b $                           b $                           Matched:b
+$                             $                             Accept
+
+Parse result: Accepted
+
+Invalid Input: a a
+
+Buffer                        Stack                         Action
+a a $                         S $                           T[S][a] = S ⇒ a b
+a a $                         a b $
+a a $                         a b $                         Matched:a
+a $                           b $                           Error: no rule
+
+Parse result: Rejected
+================================================================================
+Test: nullable
+Start symbol: S
+Original grammar:
+
+S ⇒ A b | c
+A ⇒ ε | a
+
+
+No left recursion detected.
+
+No left factoring needed.
+
+
+Calculated firsts:
+first(S) => {a, b, c}
+first(A) => {a, ε}
+
+Calculated follows:
+follow(S) => {$}
+follow(A) => {b}
+
+Firsts and Follow Result table
+
+Non-T   FIRST              FOLLOW
+S       ['a', 'b', 'c']    ['$']
+A       ['a', 'ε']         ['b']
+
+Generated parsing table:
+
+        a        b        c      $
+S       S ⇒ A b  S ⇒ A b  S ⇒ c
+A       A ⇒ a    A ⇒ ε
+
+Grammar appears to be LL(1) (no table conflicts detected).
+
+Valid Input: a b
+
+Buffer                        Stack                         Action
+a b $                         S $                           T[S][a] = S ⇒ A b
+a b $                         A b $
+a b $                         A b $                         T[A][a] = A ⇒ a
+a b $                         a b $
+a b $                         a b $                         Matched:a
+b $                           b $                           Matched:b
+$                             $                             Accept
+
+Parse result: Accepted
+
+Invalid Input: a a
+
+Buffer                        Stack                         Action
+a a $                         S $                           T[S][a] = S ⇒ A b
+a a $                         A b $
+a a $                         A b $                         T[A][a] = A ⇒ a
+a a $                         a b $
+a a $                         a b $                         Matched:a
+a $                           b $                           Error: no rule
+
+Parse result: Rejected
+================================================================================
+Test: expr_lr
+Start symbol: E
+Original grammar:
+
+E ⇒ E + T | T
+T ⇒ T * F | F
+F ⇒ ( E ) | id
+
+
+--- Left Recursion Removal Steps ---
+- Direct left recursion detected in E. Creating new non-terminal E' and rewriting productions.
+- E rewritten as: ["T E'"]
+- E' productions: ["+ T E'", 'ε']
+- Direct left recursion detected in T. Creating new non-terminal T' and rewriting productions.
+- T rewritten as: ["F T'"]
+- T' productions: ["* F T'", 'ε']
+
+Grammar after left recursion removal:
+
+E ⇒ T E'
+T ⇒ F T'
+F ⇒ ( E ) | id
+E' ⇒ + T E' | ε
+T' ⇒ * F T' | ε
+
+
+No left factoring needed.
+
+
+Calculated firsts:
+first(E) => {(, id}
+first(T) => {(, id}
+first(F) => {(, id}
+first(E') => {+, ε}
+first(T') => {*, ε}
+
+Calculated follows:
+follow(E) => {$, )}
+follow(T) => {$, ), +}
+follow(F) => {$, ), *, +}
+follow(E') => {$, )}
+follow(T') => {$, ), +}
+
+Firsts and Follow Result table
+
+Non-T   FIRST          FOLLOW
+E       ['(', 'id']    ['$', ')']
+T       ['(', 'id']    ['$', ')', '+']
+F       ['(', 'id']    ['$', ')', '*', '+']
+E'      ['+', 'ε']     ['$', ')']
+T'      ['*', 'ε']     ['$', ')', '+']
+
+Generated parsing table:
+
+        (          )       *            +            id        $
+E       E ⇒ T E'                                     E ⇒ T E'
+T       T ⇒ F T'                                     T ⇒ F T'
+F       F ⇒ ( E )                                    F ⇒ id
+E'                 E' ⇒ ε               E' ⇒ + T E'            E' ⇒ ε
+T'                 T' ⇒ ε  T' ⇒ * F T'  T' ⇒ ε                 T' ⇒ ε
+
+Grammar appears to be LL(1) (no table conflicts detected).
+
+Valid Input: id + id * id
+
+Buffer                        Stack                         Action
+id + id * id $                E $                           T[E][id] = E ⇒ T E'
+id + id * id $                T E' $
+id + id * id $                T E' $                        T[T][id] = T ⇒ F T'
+id + id * id $                F T' E' $
+id + id * id $                F T' E' $                     T[F][id] = F ⇒ id
+id + id * id $                id T' E' $
+id + id * id $                id T' E' $                    Matched:id
++ id * id $                   T' E' $                       T[T'][+] = T' ⇒ ε
++ id * id $                   E' $
++ id * id $                   E' $                          T[E'][+] = E' ⇒ + T E'
++ id * id $                   + T E' $
++ id * id $                   + T E' $                      Matched:+
+id * id $                     T E' $                        T[T][id] = T ⇒ F T'
+id * id $                     F T' E' $
+id * id $                     F T' E' $                     T[F][id] = F ⇒ id
+id * id $                     id T' E' $
+id * id $                     id T' E' $                    Matched:id
+* id $                        T' E' $                       T[T'][*] = T' ⇒ * F T'
+* id $                        * F T' E' $
+* id $                        * F T' E' $                   Matched:*
+id $                          F T' E' $                     T[F][id] = F ⇒ id
+id $                          id T' E' $
+id $                          id T' E' $                    Matched:id
+$                             T' E' $                       T[T'][$] = T' ⇒ ε
+$                             E' $
+$                             E' $                          T[E'][$] = E' ⇒ ε
+$                             $
+$                             $                             Accept
+
+Parse result: Accepted
+
+Invalid Input: id + * id
+
+Buffer                        Stack                         Action
+id + * id $                   E $                           T[E][id] = E ⇒ T E'
+id + * id $                   T E' $
+id + * id $                   T E' $                        T[T][id] = T ⇒ F T'
+id + * id $                   F T' E' $
+id + * id $                   F T' E' $                     T[F][id] = F ⇒ id
+id + * id $                   id T' E' $
+id + * id $                   id T' E' $                    Matched:id
++ * id $                      T' E' $                       T[T'][+] = T' ⇒ ε
++ * id $                      E' $
++ * id $                      E' $                          T[E'][+] = E' ⇒ + T E'
++ * id $                      + T E' $
++ * id $                      + T E' $                      Matched:+
+* id $                        T E' $                        Error: no rule
+
+Parse result: Rejected
+================================================================================
+Test: factor_example
+Start symbol: S
+Original grammar:
+
+S ⇒ A k O
+A ⇒ A d | a B | a C
+B ⇒ b B C | r
+C ⇒ c
+
+
+--- Left Recursion Removal Steps ---
+- Direct left recursion detected in A. Creating new non-terminal A' and rewriting productions.
+- A rewritten as: ["a B A'", "a C A'"]
+- A' productions: ["d A'", 'ε']
+
+Grammar after left recursion removal:
+
+S ⇒ A k O
+A ⇒ a B A' | a C A'
+B ⇒ b B C | r
+C ⇒ c
+A' ⇒ d A' | ε
+
+
+--- Left Factoring Steps ---
+- Left factoring on A: common prefix a found; created A''.
+
+Grammar after left factoring:
+
+S ⇒ A k O
+A ⇒ a A''
+B ⇒ b B C | r
+C ⇒ c
+A' ⇒ d A' | ε
+A'' ⇒ B A' | C A'
+
+
+
+Calculated firsts:
+first(S) => {a}
+first(A) => {a}
+first(B) => {b, r}
+first(C) => {c}
+first(A') => {d, ε}
+first(A'') => {b, c, r}
+
+Calculated follows:
+follow(S) => {$}
+follow(A) => {k}
+follow(B) => {c, d, k}
+follow(C) => {c, d, k}
+follow(A') => {k}
+follow(A'') => {k}
+
+Firsts and Follow Result table
+
+Non-T   FIRST              FOLLOW
+S       ['a']              ['$']
+A       ['a']              ['k']
+B       ['b', 'r']         ['c', 'd', 'k']
+C       ['c']              ['c', 'd', 'k']
+A'      ['d', 'ε']         ['k']
+A''     ['b', 'c', 'r']    ['k']
+
+Generated parsing table:
+
+        O  a          b           c           d          k       r           $
+S          S ⇒ A k O
+A          A ⇒ a A''
+B                     B ⇒ b B C                                  B ⇒ r
+C                                 C ⇒ c
+A'                                            A' ⇒ d A'  A' ⇒ ε
+A''                   A'' ⇒ B A'  A'' ⇒ C A'                     A'' ⇒ B A'
+
+Grammar appears to be LL(1) (no table conflicts detected).
+
+Valid Input: a r k O
+
+Buffer                        Stack                         Action
+a r k O $                     S $                           T[S][a] = S ⇒ A k O
+a r k O $                     A k O $
+a r k O $                     A k O $                       T[A][a] = A ⇒ a A''
+a r k O $                     a A'' k O $
+a r k O $                     a A'' k O $                   Matched:a
+r k O $                       A'' k O $                     T[A''][r] = A'' ⇒ B A'
+r k O $                       B A' k O $
+r k O $                       B A' k O $                    T[B][r] = B ⇒ r
+r k O $                       r A' k O $
+r k O $                       r A' k O $                    Matched:r
+k O $                         A' k O $                      T[A'][k] = A' ⇒ ε
+k O $                         k O $
+k O $                         k O $                         Matched:k
+O $                           O $                           Matched:O
+$                             $                             Accept
+
+Parse result: Accepted
+
+Invalid Input: a k O
+
+Buffer                        Stack                         Action
+a k O $                       S $                           T[S][a] = S ⇒ A k O
+a k O $                       A k O $
+a k O $                       A k O $                       T[A][a] = A ⇒ a A''
+a k O $                       a A'' k O $
+a k O $                       a A'' k O $                   Matched:a
+k O $                         A'' k O $                     Error: no rule
+
+Parse result: Rejected
+================================================================================
+Test: indirect_lr
+Start symbol: S
+Original grammar:
+
+S ⇒ A a | b
+A ⇒ S d | c
+
+
+--- Left Recursion Removal Steps ---
+- In A: replaced A ⇒ S d with A ⇒ A a d (expanding S ⇒ A a)
+- In A: replaced A ⇒ S d with A ⇒ b d (expanding S ⇒ b)
+- After expanding S in A, A productions become: ['A a d', 'b d', 'c']
+- Direct left recursion detected in A. Creating new non-terminal A' and rewriting productions.
+- A rewritten as: ["b d A'", "c A'"]
+- A' productions: ["a d A'", 'ε']
+
+Grammar after left recursion removal:
+
+S ⇒ A a | b
+A ⇒ b d A' | c A'
+A' ⇒ a d A' | ε
+
+
+No left factoring needed.
+
+
+Calculated firsts:
+first(S) => {b, c}
+first(A) => {b, c}
+first(A') => {a, ε}
+
+Calculated follows:
+follow(S) => {$}
+follow(A) => {a}
+follow(A') => {a}
+
+Firsts and Follow Result table
+
+Non-T   FIRST         FOLLOW
+S       ['b', 'c']    ['$']
+A       ['b', 'c']    ['a']
+A'      ['a', 'ε']    ['a']
+
+Generated parsing table:
+
+        a            b           c         d  $
+S                    S ⇒ A a     S ⇒ A a
+A                    A ⇒ b d A'  A ⇒ c A'
+A'      A' ⇒ a d A'
+
+Grammar is NOT LL(1). Conflicts found in parsing table:
+- Conflict at T[S][b]: existing -> S ⇒ A a, new -> S ⇒ b
+- Conflict at T[A'][a]: existing -> A' ⇒ a d A', new -> A' ⇒ ε
+
+Valid Input: c a
+
+Buffer                        Stack                         Action
+c a $                         S $                           T[S][c] = S ⇒ A a
+c a $                         A a $
+c a $                         A a $                         T[A][c] = A ⇒ c A'
+c a $                         c A' a $
+c a $                         c A' a $                      Matched:c
+a $                           A' a $                        T[A'][a] = A' ⇒ a d A'
+a $                           a d A' a $
+a $                           a d A' a $                    Matched:a
+$                             d A' a $                      Error: no rule
+
+Parse result: Rejected
+
+Invalid Input: b a
+
+Buffer                        Stack                         Action
+b a $                         S $                           T[S][b] = S ⇒ A a
+b a $                         A a $
+b a $                         A a $                         T[A][b] = A ⇒ b d A'
+b a $                         b d A' a $
+b a $                         b d A' a $                    Matched:b
+a $                           d A' a $                      Error: no rule
+
+Parse result: Rejected
+================================================================================
+Test: direct_recursive_example
+Start symbol: S
+Original grammar:
+
+S ⇒ S a | b
+A ⇒ a b | a c
 
 
 --- Left Recursion Removal Steps ---
 - Direct left recursion detected in S. Creating new non-terminal S' and rewriting productions.
+- S rewritten as: ["b S'"]
+- S' productions: ["a S'", 'ε']
 
 Grammar after left recursion removal:
 
-S -> b S'
-A -> a b | a c
-S' -> a S' | ε
+S ⇒ b S'
+A ⇒ a b | a c
+S' ⇒ a S' | ε
 
 
 --- Left Factoring Steps ---
@@ -21,10 +442,10 @@ S' -> a S' | ε
 
 Grammar after left factoring:
 
-S -> b S'
-A -> a A'
-S' -> a S' | ε
-A' -> b | c
+S ⇒ b S'
+A ⇒ a A'
+S' ⇒ a S' | ε
+A' ⇒ b | c
 
 
 
@@ -50,23 +471,47 @@ A'      ['b', 'c']    []
 
 Generated parsing table:
 
-        a         b        c      $
-S                 S->b S'
-A       A->a A'
-S'      S'->a S'                  S'->ε
-A'                A'->b    A'->c
+        a          b         c       $
+S                  S ⇒ b S'
+A       A ⇒ a A'
+S'      S' ⇒ a S'                    S' ⇒ ε
+A'                 A' ⇒ b    A' ⇒ c
 
-Input: b a
+Grammar appears to be LL(1) (no table conflicts detected).
+
+Valid Input: b a
 
 Buffer                        Stack                         Action
-b a $                         S $                           T[S][b] = S->b S'
+b a $                         S $                           T[S][b] = S ⇒ b S'
 b a $                         b S' $
 b a $                         b S' $                        Matched:b
-a $                           S' $                          T[S'][a] = S'->a S'
+a $                           S' $                          T[S'][a] = S' ⇒ a S'
 a $                           a S' $
 a $                           a S' $                        Matched:a
-$                             S' $                          T[S'][$] = S'->ε
+$                             S' $                          T[S'][$] = S' ⇒ ε
 $                             $
 $                             $                             Accept
 
 Parse result: Accepted
+
+Invalid Input: a a a
+
+Buffer                        Stack                         Action
+a a a $                       S $                           Error: no rule
+
+Parse result: Rejected
+
+================================================================================
+Summary:
+- simple: PASS
+- nullable: PASS
+- expr_lr: PASS
+- factor_example: PASS
+- indirect_lr: FAIL
+- direct_recursive_example: PASS
+
+Checks:
+Build: PASS
+Lint/Typecheck: PASS
+Tests: FAIL
+PS C:\Users\Joseph\Desktop\compiler design\expt6> 
