@@ -53,6 +53,7 @@ stmt:
   | while_stmt
   | do_while_stmt
   | block
+  | ';'            /* empty statement; allows for(...); */
   ;
 
 block:
